@@ -12,7 +12,6 @@ const SelectGustosModal = ({ product, open, onClose }) => {
 
   useEffect(() => {
     if (!product) return;
-
     setMaxGustos(product.size === "1/4" ? 3 : 4);
   }, [product]);
 
@@ -39,45 +38,51 @@ const SelectGustosModal = ({ product, open, onClose }) => {
     onClose();
   };
 
+  if (!product) return null;
+
   return (
     <Modal open={open} onClose={onClose}>
       <div className="select-modal">
-        {/* CONTENIDO SCROLL */}
-        <div className="select-modal__content">
+        {/* HEADER */}
+        <div className="select-modal__header">
           <h3>{product.title}</h3>
           <p>
-            Elegí hasta <strong>{maxGustos}</strong>{" "}
-            gusto{maxGustos > 1 && "s"}
+            Elegí hasta <strong>{maxGustos}</strong> gustos
           </p>
+        </div>
 
+        {/* CONTENT SCROLL */}
+        <div className="select-modal__content">
           <div className="gustos-grid">
-            {gustos.map((gusto) => (
-              <button
-                key={gusto.id}
-                className={`gusto-option ${
-                  selected.includes(gusto.name) ? "is-selected" : ""
-                }`}
-                onClick={() => toggleGusto(gusto.name)}
-                disabled={
-                  selected.length >= maxGustos &&
-                  !selected.includes(gusto.name)
-                }
-              >
-                {gusto.name}
-              </button>
-            ))}
+            {gustos.map((gusto) => {
+              const isSelected = selected.includes(gusto.name);
+              const isDisabled =
+                selected.length >= maxGustos && !isSelected;
+
+              return (
+                <button
+                  key={gusto.id}
+                  className={`gusto-option ${
+                    isSelected ? "is-selected" : ""
+                  }`}
+                  onClick={() => toggleGusto(gusto.name)}
+                  disabled={isDisabled}
+                >
+                  {gusto.name}
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* FOOTER STICKY */}
+        {/* FOOTER */}
         <div className="select-modal__footer">
           <button
             className="confirm-btn"
             disabled={selected.length === 0}
             onClick={handleConfirm}
           >
-            Confirmar helado
-            {selected.length > 0 && ` (${selected.length}/${maxGustos})`}
+            Confirmar helado ({selected.length}/{maxGustos})
           </button>
         </div>
       </div>

@@ -30,14 +30,14 @@
    HEADER
 ========================= */
 
-.modal h3 {
+.select-modal h3 {
   font-size: clamp(1.2rem, 3vw, 1.6rem);
   color: $primary-pink;
   margin-bottom: 0.25rem;
   text-align: center;
 }
 
-.modal p {
+.select-modal p {
   text-align: center;
   font-size: 0.95rem;
   color: #666;
@@ -101,7 +101,7 @@
   color: #fff;
   border: none;
   border-radius: 999px;
-  padding: 0.75rem 1rem;
+  padding: 0.75rem 0.8rem;
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
@@ -118,36 +118,7 @@
     cursor: not-allowed;
     box-shadow: none;
     transform: none;
-  }
-}
-
-/* =========================
-   CANTIDAD (PASO 1 FUTURO)
-========================= */
-
-.cantidad-grid {
-  display: grid;
-  gap: 12px;
-  margin-top: 1rem;
-}
-
-.cantidad-option {
-  padding: 14px;
-  border-radius: 12px;
-  border: 2px solid #eee;
-  background: #fff;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    border-color: $primary-pink;
-  }
-
-  &.is-selected {
-    border-color: $primary-pink;
-    background: rgba($primary-pink, 0.08);
+    padding: 0.75rem 0.8rem;
   }
 }
 

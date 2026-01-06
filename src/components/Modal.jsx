@@ -10,7 +10,7 @@ const Modal = ({ open, onClose, children }) => {
         className="modal"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* ❌ BOTÓN CERRAR */}
+        {/* BOTÓN CERRAR */}
         <button
           className="modal__close"
           onClick={onClose}
@@ -19,7 +19,10 @@ const Modal = ({ open, onClose, children }) => {
           ×
         </button>
 
-        {children}
+        {/* 🔧 SCROLL REAL */}
+        <div className="modal__scroll">
+          {children}
+        </div>
       </div>
     </div>,
     document.body
