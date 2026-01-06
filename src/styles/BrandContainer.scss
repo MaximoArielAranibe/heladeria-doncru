@@ -1,0 +1,52 @@
+@use "../styles/variables.scss" as *;
+
+.brand {
+  width: 100%;
+  overflow: hidden; // Evita desbordes
+  line-height: 0;
+  margin: 3rem 0;
+
+  &__img {
+    width: 100%;
+    height: 180px; // 📱 mobile first
+    object-fit: cover;
+    object-position: center;
+    display: block;
+  }
+}
+
+/* 📱 Mobile grande / phablets */
+@media (min-width: 480px) {
+  .brand__img {
+    height: 220px;
+  }
+}
+
+/* 📲 Tablet */
+@media (min-width: 768px) {
+  .brand {
+    margin: 4rem 0;
+  }
+
+  .brand__img {
+    height: 280px;
+  }
+}
+
+/* 💻 Desktop */
+@media (min-width: 1024px) {
+  .brand {
+    margin: 5rem 0;
+  }
+
+  .brand__img {
+    height: 360px;
+  }
+}
+
+/* 🖥️ Desktop grande */
+@media (min-width: 1440px) {
+  .brand__img {
+    height: 420px;
+  }
+}

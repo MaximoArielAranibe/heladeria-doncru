@@ -1,0 +1,62 @@
+.whatsapp-ico {
+  position: fixed; // 👈 CLAVE
+  right: 18px;
+  bottom: 22px;
+
+  width: 48px;
+  height: 48px;
+
+  background-color: #25d366;
+  border-radius: 50%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  z-index: 9999; // 👈 por arriba de todo
+
+  /* 🚫 EVITA BUGS DE SCROLL */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease,
+    background-color 0.3s ease;
+
+  svg {
+    width: 28px;
+    height: 28px;
+    fill: #fff;
+    pointer-events: none;
+  }
+
+  &:hover {
+    transform: scale(1.15);
+    box-shadow: 0 16px 40px rgba(37, 211, 102, 0.6);
+    background-color: #1ebe5d;
+  }
+
+  &:active {
+    transform: scale(1.08);
+  }
+}
+
+/* =======================
+   MOBILE SAFE AREA
+======================= */
+@media (max-width: 480px) {
+  .whatsapp-ico {
+    width: 50px;
+    height: 50px;
+    right: 14px;
+    bottom: 16px;
+
+    svg {
+      width: 24px;
+      height: 24px;
+    }
+  }
+}

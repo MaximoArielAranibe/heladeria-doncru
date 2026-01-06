@@ -1,0 +1,223 @@
+@use "../styles/variables.scss" as *;
+
+// Reset preventivo para evitar desbordamientos de ancho
+.navbar, .navbar__main, .navbar__menu {
+  box-sizing: border-box;
+}
+
+.navbar {
+  width: 100%;
+  height: 100px;
+  background-color: #FFFFFF;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  border-bottom: 2px solid $primary-pink;
+  box-shadow: 0px 4px 4px rgba(255, 104, 196, 0.5);
+  overflow: hidden;
+  transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  font-family: $font-primary;
+
+  &.is-open {
+    height: 160px; // 100px main + 60px menu rosa
+  }
+}
+
+.navbar__main {
+  width: 100%;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1rem; // Ajuste para mobile
+  flex-shrink: 0;
+}
+
+.navbar__logo {
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  &:hover img {
+    animation: float 2s ease-in-out infinite;
+  }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-5px); }
+}
+
+.navbar__buttons {
+  display: flex;
+  align-items: center;
+  gap: 4px; // REDUCIDO para que queden juntos como en tu diseño
+  margin-right: -4px; // Ajuste para acercarlos al borde derecho
+
+  &__cart, &__burger {
+    height: 50px;
+    width: 38px; // Ancho reducido para compactar el grupo de iconos
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+
+    &::after {
+      content: "";
+      position: absolute;
+      bottom: 8px; // Subido un poco para no chocar con el borde
+      left: 50%;
+      width: 0;
+      height: 2px;
+      background-color: $primary-pink;
+      transition: all 0.3s ease;
+      transform: translateX(-50%);
+    }
+
+    &:hover::after { width: 70%; }
+  }
+
+  &__cart img {
+    width: 28px; // Tamaño ajustado para balance visual
+    height: auto;
+    display: block;
+    transition: transform 0.3s ease;
+    &:hover { transform: rotate(-10deg); }
+  }
+
+  &__burger {
+    &__button {
+      width: 24px;
+      height: 18px;
+      background: none;
+      border: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 0;
+      pointer-events: none;
+      // Nivelación óptica: el burger necesita este empujón para alinearse al carrito
+      transform: translateY(2.5px);
+
+      span {
+        width: 100%;
+        height: 3px;
+        background-color: $primary-pink;
+        border-radius: 5px;
+        transition: all 0.3s ease-in-out;
+        transform-origin: center;
+      }
+    }
+
+    &.is-active {
+      .navbar__buttons__burger__button {
+        span:nth-child(1) { transform: translateY(7.5px) rotate(45deg); }
+        span:nth-child(2) { opacity: 0; transform: translateX(-10px); }
+        span:nth-child(3) { transform: translateY(-7.5px) rotate(-45deg); }
+      }
+    }
+  }
+}
+
+.navbar__menu {
+  width: 100%;
+  height: 60px;
+  background-color: $secondary-pink;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+
+  &.is-active {
+    opacity: 1;
+    .navbar__menu__list li {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  &__list {
+    display: flex;
+    list-style: none;
+    gap: 1.2rem; // Espacio optimizado para que quepan en pantallas pequeñas
+    padding: 0;
+    margin: 0;
+
+    li {
+      opacity: 0;
+      transform: translateY(15px);
+      transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+
+      // Cascada de izquierda a derecha perfecta
+      &:nth-child(1) { transition-delay: 0.15s; }
+      &:nth-child(2) { transition-delay: 0.25s; }
+      &:nth-child(3) { transition-delay: 0.35s; }
+      &:nth-child(4) { transition-delay: 0.45s; }
+    }
+
+    li a {
+      font-weight: 300;
+      font-size: 14px;
+      color: white;
+      text-decoration: none;
+      white-space: nowrap;
+      transition: opacity 0.2s;
+      &:hover { opacity: 0.8; }
+    }
+  }
+}
+
+// Cierre rápido sin delays
+.navbar__menu:not(.is-active) .navbar__menu__list li {
+  transition-delay: 0s !important;
+  transition-duration: 0.2s;
+}
+.navbar__info {
+  width: 100%;
+  height: 36px;
+  background-color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: $font-primary;
+  position: relative;
+
+  &::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    width: 85%;
+    height: 1px;
+    background: linear-gradient(
+      to right,
+      transparent,
+      rgba(255, 130, 206, 0.35),
+      transparent
+    );
+  }
+}
+
+.navbar__info__text {
+  font-size: 12px;
+  font-weight: 300;
+  color: #666;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px; // 🔑 clave
+  background: rgba(255, 130, 206, 0.08);
+}

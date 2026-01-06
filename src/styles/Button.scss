@@ -1,0 +1,30 @@
+@use "../styles/variables.scss" as *;
+@use "sass:color";
+
+
+.custom-button {
+  font-family: $font-primary;
+  background-color: $secondary-pink;
+  color: white;
+  border: solid 1px $accent-pink;
+  padding: 2px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 58px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(255, 104, 196, 0.2);
+  width: fit-content;
+
+  &:hover {
+    background-color: color.adjust($primary-pink, $lightness: 6%);
+
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(255, 104, 196, 0.3);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}

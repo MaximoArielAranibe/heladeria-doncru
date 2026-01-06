@@ -1,0 +1,78 @@
+@use "../styles/variables.scss" as *;
+
+.footer {
+  background-color: #fff;
+  border-top: 2px solid $primary-pink;
+  padding-top: 3rem;
+  font-size: 0.9rem;
+  font-family: $font-primary;
+
+  .footer__links h4, .footer__contact h4 {
+    font-size: 1rem;
+  }
+
+  &__container {
+    max-width: 1200px;
+    margin: auto;
+    padding: 0 1.5rem 3rem;
+    display: grid;
+    gap: 2.5rem;
+  }
+
+  &__brand {
+    img {
+      width: 140px;
+      margin-bottom: 1rem;
+    }
+
+    p {
+      color: #666;
+      line-height: 1.5;
+    }
+  }
+
+  h4 {
+    margin-bottom: 1rem;
+    color: $primary-pink;
+    font-weight: 600;
+  }
+
+  ul {
+    list-style: none;
+    padding: 0;
+
+    li {
+      margin-bottom: 0.5rem;
+    }
+
+    a {
+      text-decoration: none;
+      color: #444;
+
+      &:hover {
+        color: $primary-pink;
+      }
+    }
+  }
+
+  &__contact p {
+    margin-bottom: 0.5rem;
+    color: #444;
+  }
+
+  &__bottom {
+    border-top: 1px solid #eee;
+    padding: 1rem;
+    text-align: center;
+    font-size: 0.8rem;
+    color: #777;
+  }
+}
+
+/* 💻 Desktop */
+@media (min-width: 768px) {
+  .footer__container {
+    grid-template-columns: 2fr 1fr 1fr;
+    align-items: start;
+  }
+}

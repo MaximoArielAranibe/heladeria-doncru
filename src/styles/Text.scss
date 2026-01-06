@@ -1,0 +1,16 @@
+@use "../styles/variables.scss" as *;
+
+.container{
+  width: 100%;
+  background-color: $secondary-pink;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &__text{
+    color: #FFF;
+    font-family: $font-primary;
+    font-size: 16px;
+  }
+}

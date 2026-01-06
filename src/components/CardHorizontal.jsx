@@ -1,0 +1,55 @@
+import { useState } from "react";
+import "../styles/CardHorizontal.scss";
+import foto from "../assets/vertical-11.jpeg";
+import Button from "./Button";
+import StarBadge from "./StarBadge";
+import SelectGustosModal from "./SelectGustosModal";
+
+const CardHorizontal = ({
+  imageRight = false,
+  title = "",
+  price = 0,
+  isFeatured = false,
+  product,
+}) => {
+  const [openModal, setOpenModal] = useState(false);
+
+  return (
+    <>
+      <div className={`card ${imageRight ? "card--reverse" : ""}`}>
+        {isFeatured && (
+          <StarBadge className="card__badge" size={28} />
+        )}
+
+        <img
+          src={foto}
+          alt="Foto helados Don Cru"
+          className="card__img"
+        />
+
+        <div className="card__texts">
+          <h4 className="card__texts__title">{title}</h4>
+          <p className="card__texts__subtitle">A tan solo ${price? price : ""}</p>
+          <p className="card__texts__p">¿Te lo pensás perder?</p>
+
+          <Button
+            text="Pedir ahora"
+            onClick={() => setOpenModal(true)}
+            className="card__texts__button"
+          />
+        </div>
+      </div>
+
+      {/* 🧊 MODAL DE GUSTOS */}
+      {product && (
+        <SelectGustosModal
+          product={product}
+          open={openModal}
+          onClose={() => setOpenModal(false)}
+        />
+      )}
+    </>
+  );
+};
+
+export default CardHorizontal;

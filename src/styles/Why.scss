@@ -1,0 +1,45 @@
+@use "../styles/variables.scss"as *;
+
+
+.why {
+  padding: 4rem 1.5rem;
+  text-align: center;
+  font-family: $font-primary;
+
+  &__title {
+    font-size: 2rem;
+    margin-bottom: 3rem;
+  }
+
+  &__items {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 2rem;
+  }
+
+  &__item {
+    background: #fff;
+    border-radius: 16px;
+    padding: 2rem 1.5rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    transition: transform 0.3s ease;
+
+    &:hover {
+      transform: translateY(-5px);
+    }
+
+    h3 {
+      margin: 1rem 0 0.5rem;
+      font-size: 1.1rem;
+    }
+
+    p {
+      font-size: 0.95rem;
+      opacity: 0.8;
+    }
+  }
+
+  &__icon {
+    font-size: 2rem;
+  }
+}
