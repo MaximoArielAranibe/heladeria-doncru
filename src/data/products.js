@@ -13,7 +13,7 @@ export const products = [
   },
   {
     id: 2,
-    title: "Medio kilo",
+    title: "Medio KG de helado",
     description: "Hasta 4 gustos.",
     price: 4500,
     category: "tamaños",
@@ -23,7 +23,7 @@ export const products = [
   },
   {
     id: 3,
-    title: "Kilo",
+    title: "KG de helado",
     description: "Hasta 6 gustos.",
     price: 8000,
     category: "tamaños",
