@@ -16,8 +16,7 @@ const Home = () => {
       <CardsContainer />
       <Text text='nuestros sabores' />
       <CategoriesCarousel />
-      {/*         <Text text='es un antojo chiquitito?' />
- */}        <Text text='🌟 EL MÁS PEDIDO 🌟' />
+      <Text text='🌟 EL MÁS PEDIDO 🌟' />
       <CardsVerticalContainer />
       <Why />
       <CTA />

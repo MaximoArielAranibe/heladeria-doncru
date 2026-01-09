@@ -18,7 +18,9 @@ const Navbar = () => {
 
           <div className="navbar__buttons">
             <div className="navbar__buttons__cart">
-              <img src={cartIcon} alt="Carrito" />
+              <Link to='/carrito'>
+                <img src={cartIcon} alt="Carrito" />
+              </Link>
             </div>
 
             <div

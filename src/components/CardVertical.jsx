@@ -39,6 +39,7 @@ const CardVertical = ({ product }) => {
             <Button
               text="Comprar ahora"
               onClick={() => setOpenModal(true)}
+              className="card-v__texts__button"
             />
           </div>
         </div>

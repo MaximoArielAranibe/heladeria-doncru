@@ -1,21 +1,14 @@
 import CardVertical from "./CardVertical";
 import "../styles/CardsVerticalContainer.scss";
 import { products } from "../data/products";
-import { useParams } from "react-router-dom";
 
 export const CardsVerticalContainer = () => {
-  const { categoria } = useParams(); // 👈 viene de la URL
-
-  const filteredProducts =
-    !categoria || categoria === "todos"
-      ? products
-      : products.filter(
-          (product) => product.category === categoria
-        );
+  // Filtramos el array para que solo contenga los productos con masVendido: true
+  const bestSellers = products.filter((product) => product.masVendido === true);
 
   return (
     <div className="cards__vertical__container">
-      {filteredProducts.map((product) => (
+      {bestSellers.map((product) => (
         <CardVertical key={product.id} product={product} />
       ))}
     </div>

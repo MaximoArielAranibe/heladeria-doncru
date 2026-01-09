@@ -1,4 +1,4 @@
-@use "../styles/variables.scss"as *;
+@use "../styles/variables.scss" as *;
 
 .card-v {
   font-family: $font-primary;
@@ -9,15 +9,70 @@
   border: 1px solid $secondary-pink;
   border-radius: 24px;
   overflow: hidden;
-  background-color: #FFFFFF;
+  background-color: #ffffff;
   box-shadow: 0px 4px 10px rgba(255, 104, 196, 0.1);
+  position: relative;
+  cursor: pointer;
+
+  // Transición suave optimizada
+  transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+
+  // ✨ EFECTO PROFESIONAL: Brillo que recorre la tarjeta
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -150%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(
+      to right,
+      transparent,
+      rgba(255, 255, 255, 0.3),
+      transparent
+    );
+    transform: skewX(-25deg);
+    transition: 0.7s;
+    z-index: 3;
+  }
+
+  &:hover {
+    transform: translateY(-12px);
+    border-color: $primary-pink;
+    box-shadow: 0px 20px 40px rgba(255, 104, 196, 0.2);
+
+    // Activa el brillo al hacer hover
+    &::before {
+      left: 150%;
+    }
+
+    // Mejora de la imagen al hover
+    .card-v__img {
+      transform: scale(1.08);
+      filter: brightness(1.05); // Le da un toque de luz
+    }
+
+    .card-v__badge {
+      transform: scale(1.15) rotate(-8deg);
+    }
+  }
+
+  &:active {
+    transform: translateY(-4px) scale(0.98);
+    box-shadow: 0px 8px 15px rgba(255, 104, 196, 0.2);
+  }
+
   &:first-child {
     border: 2px solid $primary-pink;
     box-shadow: 0px 6px 16px rgba(255, 104, 196, 0.25);
+    &:hover {
+      box-shadow: 0px 15px 35px rgba(255, 104, 196, 0.4);
+    }
   }
 
   &__img-container {
     position: relative;
+    overflow: hidden;
   }
 
   &__badge {
@@ -25,17 +80,10 @@
     top: 12px;
     left: 12px;
     z-index: 2;
-
     pointer-events: none;
     user-select: none;
-
     filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.25));
-    transition: transform 0.3s ease, filter 0.3s ease;
-  }
-
-  &:hover &__badge {
-    transform: scale(1.05) rotate(-3deg);
-    filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.3));
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   }
 
   &__img {
@@ -44,7 +92,7 @@
     object-fit: cover;
     border-radius: 24px 24px 0 0;
     display: block;
-
+    transition: transform 0.6s ease, filter 0.6s ease;
   }
 
   &__texts {
@@ -53,8 +101,8 @@
     flex-direction: column;
     justify-content: center;
     align-items: flex-start;
-    text-align: center;
-    gap: 20px;
+    text-align: left;
+    gap: 15px;
 
     &__title {
       margin: 0;
@@ -62,14 +110,16 @@
       font-weight: bold;
       color: $primary-pink;
       text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
     &__subtitle {
       margin: 0;
       font-size: 14px;
       font-style: italic;
-      color: black;
+      color: #333;
       font-weight: 400;
+      line-height: 1.4;
     }
 
     &__p {
@@ -80,31 +130,46 @@
       font-style: italic;
     }
 
-    // Nuevo contenedor alineado en fila (row)
     &__footer {
       width: 100%;
       margin-top: 0.5rem;
       display: flex;
-      flex-direction: row; // Uno al lado del otro
-      justify-content: space-between; // Precio a la izquierda, botón a la derecha
-      align-items: center; // Alineados verticalmente al centro
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
       gap: 10px;
     }
 
     &__price {
       margin: 0;
       font-size: 18px;
-      font-weight: 500;
+      font-weight: 600;
       color: $secondary-pink;
       font-family: $font-primary;
-      white-space: nowrap; // Evita que el precio se rompa en dos líneas
+      white-space: nowrap;
     }
 
     &__button {
-      // Ajustamos el botón para que no ocupe todo el ancho y permita espacio al precio
       flex-shrink: 0;
       padding: 8px 16px;
       font-size: 13px;
+    }
+  }
+}
+
+// --- AJUSTES DESKTOP ---
+@media (min-width: 1024px) {
+  .card-v {
+    max-width: 380px; // Un poco más grande para desktop
+
+    &__img {
+      height: 200px; // Más altura para que luzca el producto
+    }
+
+    &__texts {
+        padding: 1.5rem;
+        &__title { font-size: 16px; }
+        &__price { font-size: 20px; }
     }
   }
 }

@@ -10,6 +10,7 @@ export const products = [
     image: cuartoImg,
     maxGustos: 3,
     featured: true,
+    masVendido: true
   },
   {
     id: 2,
@@ -24,7 +25,7 @@ export const products = [
   {
     id: 3,
     title: "KG de helado",
-    description: "Hasta 6 gustos.",
+    description: "Hasta 4 gustos.",
     price: 8000,
     category: "tamaños",
     image: cuartoImg,

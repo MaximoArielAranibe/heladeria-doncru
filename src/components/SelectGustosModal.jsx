@@ -1,18 +1,18 @@
 import { useState, useEffect } from "react";
 import Modal from "./Modal";
 import { gustos } from "../data/gustos";
-import { useCart } from "../components/context/CartContext.jsx";
+import { useCart } from "../components/context/useCart";
 import "../styles/SelectGustosModal.scss";
 
 const SelectGustosModal = ({ product, open, onClose }) => {
   const { addToCart } = useCart();
 
   const [selected, setSelected] = useState([]);
-  const [maxGustos, setMaxGustos] = useState(4);
+  const [maxGustos, setMaxGustos] = useState(0);
 
   useEffect(() => {
     if (!product) return;
-    setMaxGustos(product.size === "1/4" ? 3 : 4);
+    setMaxGustos(product.maxGustos);
   }, [product]);
 
   useEffect(() => {
@@ -21,20 +21,23 @@ const SelectGustosModal = ({ product, open, onClose }) => {
 
   const toggleGusto = (gusto) => {
     if (selected.includes(gusto)) {
-      setSelected(selected.filter((g) => g !== gusto));
+      setSelected((prev) => prev.filter((g) => g !== gusto));
       return;
     }
 
     if (selected.length >= maxGustos) return;
 
-    setSelected([...selected, gusto]);
+    setSelected((prev) => [...prev, gusto]);
   };
 
   const handleConfirm = () => {
+    if (selected.length === 0) return;
+
     addToCart({
       ...product,
       gustos: selected,
     });
+
     onClose();
   };
 
@@ -43,7 +46,6 @@ const SelectGustosModal = ({ product, open, onClose }) => {
   return (
     <Modal open={open} onClose={onClose}>
       <div className="select-modal">
-        {/* HEADER */}
         <div className="select-modal__header">
           <h3>{product.title}</h3>
           <p>
@@ -51,7 +53,6 @@ const SelectGustosModal = ({ product, open, onClose }) => {
           </p>
         </div>
 
-        {/* CONTENT SCROLL */}
         <div className="select-modal__content">
           <div className="gustos-grid">
             {gustos.map((gusto) => {
@@ -75,7 +76,6 @@ const SelectGustosModal = ({ product, open, onClose }) => {
           </div>
         </div>
 
-        {/* FOOTER */}
         <div className="select-modal__footer">
           <button
             className="confirm-btn"
