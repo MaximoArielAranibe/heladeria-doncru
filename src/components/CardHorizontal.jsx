@@ -10,10 +10,11 @@ const CardHorizontal = ({
   title = "",
   price = 0,
   isFeatured = false,
+  thumbnail = "",
   product,
 }) => {
   const [openModal, setOpenModal] = useState(false);
-
+  const imageSrc = thumbnail && thumbnail !== "" ? thumbnail : foto;
   return (
     <>
       <div className={`card ${imageRight ? "card--reverse" : ""}`}>
@@ -22,14 +23,15 @@ const CardHorizontal = ({
         )}
 
         <img
-          src={foto}
+          src={imageSrc}
           alt="Foto helados Don Cru"
           className="card__img"
+          onError={(e) => { e.target.src = foto }}
         />
 
         <div className="card__texts">
           <h4 className="card__texts__title">{title}</h4>
-          <p className="card__texts__subtitle">A tan solo ${price? price : ""}</p>
+          <p className="card__texts__subtitle">A tan solo ${price ? price : ""}</p>
           <p className="card__texts__p">¿Te lo pensás perder?</p>
 
           <Button

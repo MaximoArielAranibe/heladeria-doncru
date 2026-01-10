@@ -1,9 +1,11 @@
+import React from 'react'
 import "../styles/CardsContainer.scss";
-import CardHorizontal from "./CardHorizontal";
+import CardHorizontal from "../components/CardHorizontal";
 import { products } from "../data/products";
 
-const CardsContainer = () => {
+const Tamaños = () => {
   return (
+
     <div className="cards__container">
       {products.map((product, index) => (
         <CardHorizontal
@@ -17,7 +19,8 @@ const CardsContainer = () => {
         />
       ))}
     </div>
-  );
-};
 
-export default CardsContainer;
+  )
+}
+
+export default Tamaños

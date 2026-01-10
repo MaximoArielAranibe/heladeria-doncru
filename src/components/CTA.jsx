@@ -1,4 +1,5 @@
 import "../styles/CTA.scss";
+import { Link } from "react-router-dom";
 
 const CTA = () => {
   return (
@@ -12,9 +13,9 @@ const CTA = () => {
           Elegí el tamaño perfecto y disfrutá como más te gusta.
         </p>
 
-        <a href="#productos" className="cta__button">
+        <Link to="/tamaños" className="cta__button">
           Ver tamaños
-        </a>
+        </Link>
       </div>
     </section>
   );

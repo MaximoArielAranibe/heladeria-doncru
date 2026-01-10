@@ -1,4 +1,6 @@
 import cuartoImg from "../assets/vertical-11.jpeg";
+import medioImg from "../assets/vertical-horizontal.jpg";
+import kiloImg from "../assets/vertical-para-ser-horizontal.jpeg";
 
 export const products = [
   {
@@ -7,10 +9,10 @@ export const products = [
     description: "Podés elegir hasta 3 gustos.",
     price: 2500,
     category: "tamaños",
-    image: cuartoImg,
+    thumbnail: cuartoImg,
     maxGustos: 3,
     featured: true,
-    masVendido: true
+    masVendido: true,
   },
   {
     id: 2,
@@ -18,7 +20,7 @@ export const products = [
     description: "Hasta 4 gustos.",
     price: 4500,
     category: "tamaños",
-    image: cuartoImg,
+    thumbnail: medioImg,
     maxGustos: 4,
     featured: false,
   },
@@ -28,7 +30,7 @@ export const products = [
     description: "Hasta 4 gustos.",
     price: 8000,
     category: "tamaños",
-    image: cuartoImg,
+    thumbnail: kiloImg,
     maxGustos: 4,
     featured: false,
   },

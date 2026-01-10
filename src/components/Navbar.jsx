@@ -42,10 +42,11 @@ const Navbar = () => {
         {/* Menú Rosa */}
         <nav className={`navbar__menu ${isOpen ? "is-active" : ""}`}>
           <ul className="navbar__menu__list">
-            <li><a href="#productos">Productos</a></li>
-            <li><a href="#gustos">Gustos</a></li>
-            <li><a href="#postres">Postres</a></li>
-            <li><a href="#contacto">Contacto</a></li>
+            <li><Link to="/">Inicio</Link></li>
+            <li><Link to="/gustos/todos">Gustos</Link></li>
+            {/*             <li><Link to="/postres">Postres</Link></li> */}
+            <li><Link to="/tamaños">Tamaños</Link></li>
+            <li><Link to="/contacto">Contacto</Link></li>
           </ul>
         </nav>
       </header>

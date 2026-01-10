@@ -9,6 +9,7 @@ import WhatsAppButton from './components/WhatsAppButton.jsx';
 import ScrollToTop from './components/ScrollTopTop.jsx';
 import { CartProvider } from './components/context/CartContext.jsx';
 import Carrito from './pages/Carrito.jsx';
+import Tamaños from './pages/Tamaños.jsx';
 function App() {
 
   return (
@@ -24,6 +25,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/gustos" element={<Gustos />} />
             <Route path="/gustos/:categoria" element={<Gustos />} />
+            <Route path="/tamaños" element={<Tamaños />} />
             <Route path="/carrito" element={<Carrito />} />
           </Routes>
 

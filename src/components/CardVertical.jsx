@@ -18,7 +18,7 @@ const CardVertical = ({ product }) => {
           )}
 
           <img
-            src={product.image}
+            src={product.thumbnail}
             alt={product.title}
             className="card-v__img"
             loading="lazy"
