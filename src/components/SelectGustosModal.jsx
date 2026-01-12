@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import Modal from "./Modal";
 import { gustos } from "../data/gustos";
-import { useCart } from "../components/context/useCart";
+import { useCart } from "../context/useCart";
 import "../styles/SelectGustosModal.scss";
+import toast from "react-hot-toast";
 
 const SelectGustosModal = ({ product, open, onClose }) => {
   const { addToCart } = useCart();
@@ -37,6 +38,9 @@ const SelectGustosModal = ({ product, open, onClose }) => {
       ...product,
       gustos: selected,
     });
+
+    toast.success("Producto agregado al carrito 🛒");
+
 
     onClose();
   };

@@ -1,40 +1,234 @@
+@use "./variables" as *;
+
+/* =============================
+   CART ITEM
+============================= */
+
 .cart-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 1.2rem;
-  border-radius: 12px;
-  background-color: #f9f9f9;
+  list-style: none;
+  position: relative;
+  overflow: hidden;
+
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease,
+    max-height 0.25s ease,
+    margin 0.25s ease;
+
+  &--removing {
+    opacity: 0;
+    transform: scale(0.96);
+    max-height: 0;
+    margin: 0;
+    overflow: hidden;
+  }
+
+  /* =============================
+     SWIPE BACKGROUND (MOBILE ONLY)
+  ============================= */
+
+  &__swipe-bg {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+
+    width: 80px; /* 🔑 SOLO área swipe */
+    background: #ff4d4f;
+    border-radius: 16px;
+
+    color: #fff;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-weight: 600;
+    font-size: 0.85rem;
+
+    z-index: 1;
+  }
+
+  /* =============================
+     CONTENT (GLASS)
+  ============================= */
+
+  &__content {
+    position: relative;
+    z-index: 2;
+
+    border-radius: 16px;
+    padding: 1.3rem;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+
+    /* GLASS CONTROLADO */
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+
+    transition:
+      transform 0.2s ease,
+      box-shadow 0.2s ease,
+      background 0.2s ease;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    &__content:hover {
+      transform: translateY(-2px);
+      background: #fff;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.16);
+    }
+  }
+
+  /* =============================
+     INFO
+  ============================= */
 
   &__info {
-    display: flex;
-    flex-direction: column;
-    gap: 0.3rem;
+    flex: 1;
+    min-width: 0;
   }
 
   &__title {
-    font-size: 1.1rem;
+    margin: 0;
+    font-size: 0.95rem;
     font-weight: 600;
   }
 
-  &__gustos {
-    font-size: 0.9rem;
+  &__flavors {
+    margin-top: 0.2rem;
+    font-size: 0.75rem;
     color: #666;
+  }
+
+  /* =============================
+     RIGHT
+  ============================= */
+
+  &__right {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+
+  &__quantity {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+
+    button {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      border: none;
+      background: rgba(0, 0, 0, 0.06);
+      cursor: pointer;
+      font-weight: 600;
+
+      &:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+    }
+
+    span {
+      min-width: 18px;
+      text-align: center;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
   }
 
   &__price {
     font-weight: 700;
+    font-size: 0.9rem;
+    white-space: nowrap;
   }
 
+  /* =============================
+     REMOVE BUTTON
+  ============================= */
+
   &__remove {
-    background: none;
+    position: absolute;
+    top: 8px;
+    right: 8px;
+
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
     border: none;
-    font-size: 1.2rem;
+
+    background: rgba(0, 0, 0, 0.08);
+    backdrop-filter: blur(6px);
+
     cursor: pointer;
-    color: #999;
+    font-size: 0.9rem;
+    color: #444;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    transition: background 0.2s ease, transform 0.15s ease;
 
     &:hover {
-      color: #000;
+      background: rgba(0, 0, 0, 0.15);
+    }
+
+    &:active {
+      transform: scale(0.9);
+    }
+  }
+}
+
+/* =============================
+   DESKTOP
+============================= */
+
+@media (min-width: 768px) {
+  .cart-item {
+    &__content {
+      padding: 2rem 2.4rem;
+      background: #fff; /* 🔒 sólido desktop */
+    }
+
+    &__title {
+      font-size: 1rem;
+    }
+
+    &__price {
+      font-size: 1rem;
+    }
+
+    /* 🔒 Swipe NO existe */
+    &__swipe-bg {
+      display: none !important;
+    }
+  }
+}
+
+/* =============================
+   DESACTIVAR SWIPE DESKTOP
+============================= */
+
+@media (hover: hover) and (pointer: fine) {
+  .cart-item {
+    overflow: visible;
+
+    &__swipe-bg {
+      display: none !important;
+    }
+
+    &__content {
+      transform: none !important;
     }
   }
 }

@@ -1,12 +1,73 @@
-import { useContext } from "react";
-import { CartContext } from "../components/context/CartContext";
+import { useContext, useEffect, useState } from "react";
+import { CartContext } from "../context/CartContext";
 import CartItem from "../components/CartItem";
+import { createOrder } from "../services/orders.service";
 import "../styles/Carrito.scss";
 
-const Carrito = () => {
-  const { cart, removeFromCart, clearCart } = useContext(CartContext);
 
-  const total = cart.reduce((acc, item) => acc + item.price, 0);
+const Carrito = () => {
+  const { cart, removeFromCart, clearCart, updateQuantity } =
+    useContext(CartContext);
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key === "Escape") {
+        setIsModalOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, []);
+
+  const total = cart.reduce(
+    (acc, item) => acc + item.price * item.quantity,
+    0
+  );
+
+  const hasInvalidItems = cart.some(
+    (item) => !item.gustos || item.gustos.length === 0
+  );
+
+  const buildWhatsappMessage = (cart, total) => {
+    const items = cart
+      .map((item) => {
+        const gustosText =
+          item.gustos?.length > 0
+            ? ` (${item.gustos.join(", ")})`
+            : "";
+
+        return `• ${item.title} x${item.quantity}${gustosText}`;
+      })
+      .join("\n");
+
+    const message = `Hola! Quiero hacer este pedido:
+
+${items}
+
+Total: $${total}`;
+
+    return encodeURIComponent(message);
+  };
+
+  const phone = "+5492477567514";
+
+  const handleConfirm = async () => {
+    try {
+      const orderId = await createOrder({ cart, total });
+
+      const message = buildWhatsappMessage(cart, total);
+      window.open(
+        `https://wa.me/${phone}?text=${message}%0A%0APedido ID: ${orderId}`,
+        "_blank"
+      );
+    } catch (error) {
+      console.error("Error creando pedido", error);
+    }
+  };
+
 
   if (cart.length === 0) {
     return (
@@ -27,13 +88,14 @@ const Carrito = () => {
             key={item.cartId}
             item={item}
             onRemove={removeFromCart}
+            onUpdateQuantity={updateQuantity}
           />
         ))}
       </ul>
 
       <div className="carrito__footer">
         <div className="carrito__total">
-          Total <strong>${total}</strong>
+          Total: <strong>${total}</strong>
         </div>
 
         <div className="carrito__actions">
@@ -41,11 +103,69 @@ const Carrito = () => {
             Vaciar carrito
           </button>
 
-          <button className="btn btn--primary">
+          <button
+            className="btn btn--primary"
+            onClick={() => setIsModalOpen(true)}
+            disabled={hasInvalidItems}
+          >
             Confirmar pedido
           </button>
         </div>
       </div>
+
+      {/* =============================
+          MODAL DEL CARRITO (SCOPED)
+      ============================== */}
+
+      {isModalOpen && (
+        <div
+          className="carrito-modal-overlay"
+          onClick={() => setIsModalOpen(false)}
+        >
+          <div
+            className="carrito-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3>Confirmar pedido</h3>
+
+            <ul className="carrito-modal__list">
+              {cart.map((item) => (
+                <li key={item.cartId}>
+                  <strong>{item.title}</strong> x{item.quantity}
+                  {item.gustos?.length > 0 && (
+                    <div className="carrito-modal__gustos">
+                      Gustos: {item.gustos.join(", ")}
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+
+            <div className="carrito-modal__total">
+              Total: <strong>${total}</strong>
+            </div>
+
+            <div className="carrito-modal__actions">
+              <button
+                className="btn btn--secondary"
+                onClick={() => setIsModalOpen(false)}
+              >
+                Volver
+              </button>
+
+              <button
+                className="btn btn--primary"
+                onClick={() => {
+                  handleConfirm();
+                  setIsModalOpen(false);
+                }}
+              >
+                Enviar por WhatsApp
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 };

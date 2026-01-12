@@ -11,7 +11,7 @@ const Gustos = () => {
         title={
           categoria
             ? `Sabores de ${categoria.replace("-", " ")}`
-            : "Todos los sabores"
+            : "Todos nuestros gustos"
         }
       />
     </main>

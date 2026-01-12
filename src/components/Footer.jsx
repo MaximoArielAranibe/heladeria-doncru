@@ -1,4 +1,5 @@
 import "../styles/Footer.scss";
+import { Link } from "react-router-dom";
 import logo from "../assets/logo-desktop.svg";
 
 const Footer = () => {
@@ -19,10 +20,10 @@ const Footer = () => {
         <div className="footer__links">
           <h4>Secciones</h4>
           <ul>
-            <li><a href="#productos">Productos</a></li>
-            <li><a href="#gustos">Gustos</a></li>
-            <li><a href="#postres">Postres</a></li>
-            <li><a href="#contacto">Contacto</a></li>
+            <li><Link to="/gustos">Gustos</Link></li>
+            <li><Link to="/tamaños">Tamaños</Link></li>
+            <li><Link to="/carrito">Carrito</Link></li>
+            <li><Link to="/contacto">Contacto</Link></li>
           </ul>
         </div>
 
