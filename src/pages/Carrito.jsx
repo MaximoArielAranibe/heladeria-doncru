@@ -4,12 +4,12 @@ import CartItem from "../components/CartItem";
 import { createOrder } from "../services/orders.service";
 import "../styles/Carrito.scss";
 
-
 const Carrito = () => {
   const { cart, removeFromCart, clearCart, updateQuantity } =
     useContext(CartContext);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const handleEsc = (e) => {
@@ -55,19 +55,37 @@ Total: $${total}`;
   const phone = "+5492477567514";
 
   const handleConfirm = async () => {
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
+
     try {
-      const orderId = await createOrder({ cart, total });
+      const orderId = await createOrder({
+        cart,
+        total,
+        customer: {
+          name: "Cliente WhatsApp", // después lo pedís en un form
+          phone,
+        },
+      });
 
       const message = buildWhatsappMessage(cart, total);
+
+      // 👉 Abrimos WhatsApp
       window.open(
         `https://wa.me/${phone}?text=${message}%0A%0APedido ID: ${orderId}`,
         "_blank"
       );
+
+      // ✅ Limpiamos carrito y cerramos modal
+      clearCart();
+      setIsModalOpen(false);
     } catch (error) {
       console.error("Error creando pedido", error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
-
 
   if (cart.length === 0) {
     return (
@@ -99,14 +117,18 @@ Total: $${total}`;
         </div>
 
         <div className="carrito__actions">
-          <button className="btn btn--secondary" onClick={clearCart}>
+          <button
+            className="btn btn--secondary"
+            onClick={clearCart}
+            disabled={isSubmitting}
+          >
             Vaciar carrito
           </button>
 
           <button
             className="btn btn--primary"
             onClick={() => setIsModalOpen(true)}
-            disabled={hasInvalidItems}
+            disabled={hasInvalidItems || isSubmitting}
           >
             Confirmar pedido
           </button>
@@ -114,13 +136,13 @@ Total: $${total}`;
       </div>
 
       {/* =============================
-          MODAL DEL CARRITO (SCOPED)
+          MODAL DEL CARRITO
       ============================== */}
 
       {isModalOpen && (
         <div
           className="carrito-modal-overlay"
-          onClick={() => setIsModalOpen(false)}
+          onClick={() => !isSubmitting && setIsModalOpen(false)}
         >
           <div
             className="carrito-modal"
@@ -149,18 +171,19 @@ Total: $${total}`;
               <button
                 className="btn btn--secondary"
                 onClick={() => setIsModalOpen(false)}
+                disabled={isSubmitting}
               >
                 Volver
               </button>
 
               <button
                 className="btn btn--primary"
-                onClick={() => {
-                  handleConfirm();
-                  setIsModalOpen(false);
-                }}
+                onClick={handleConfirm}
+                disabled={isSubmitting}
               >
-                Enviar por WhatsApp
+                {isSubmitting
+                  ? "Enviando..."
+                  : "Enviar por WhatsApp"}
               </button>
             </div>
           </div>

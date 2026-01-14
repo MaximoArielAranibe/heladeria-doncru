@@ -16,8 +16,9 @@ import Tamaños from './pages/Tamaños.jsx'
 import { AuthProvider } from "./context/AuthProvider.jsx";
 import ProtectedRoute from "./routes/ProtectedRoute.jsx";
 import AdminLogin from "./pages/AdminLogin.jsx";
-import AdminDashboard from "./pages/AdminDashboard.jsx";
-import AdminOrders from './pages/AdminOrders.jsx'
+import AdminLayout from './components/admin/AdminLayout.jsx';
+import AdminDashboard from './components/admin/AdminDashboard.jsx';
+import Orders from './components/admin/Orders.jsx';
 
 
 
@@ -43,21 +44,13 @@ function App() {
               path="/admin"
               element={
                 <ProtectedRoute>
-                  <AdminDashboard />
+                  <AdminLayout />
                 </ProtectedRoute>
               }
-
-            />
-
-            <Route
-              path="/admin/pedidos"
-              element={
-                <ProtectedRoute>
-                  <AdminOrders />
-                </ProtectedRoute>
-              }
-            />
-
+            >
+              <Route index element={<AdminDashboard />} />
+              <Route path="pedidos" element={<Orders />} />
+            </Route>
 
           </Routes>
 

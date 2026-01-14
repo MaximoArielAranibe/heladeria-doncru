@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Modal from "./Modal";
 import { gustos } from "../data/gustos";
 import { useCart } from "../context/useCart";
@@ -9,26 +9,20 @@ const SelectGustosModal = ({ product, open, onClose }) => {
   const { addToCart } = useCart();
 
   const [selected, setSelected] = useState([]);
-  const [maxGustos, setMaxGustos] = useState(0);
 
-  useEffect(() => {
-    if (!product) return;
-    setMaxGustos(product.maxGustos);
-  }, [product]);
-
-  useEffect(() => {
-    if (!open) setSelected([]);
-  }, [open]);
+  // 👉 Derivado directamente del producto (NO state)
+  const maxGustos = product?.maxGustos ?? 0;
 
   const toggleGusto = (gusto) => {
-    if (selected.includes(gusto)) {
-      setSelected((prev) => prev.filter((g) => g !== gusto));
-      return;
-    }
+    setSelected((prev) => {
+      if (prev.includes(gusto)) {
+        return prev.filter((g) => g !== gusto);
+      }
 
-    if (selected.length >= maxGustos) return;
+      if (prev.length >= maxGustos) return prev;
 
-    setSelected((prev) => [...prev, gusto]);
+      return [...prev, gusto];
+    });
   };
 
   const handleConfirm = () => {
@@ -41,14 +35,19 @@ const SelectGustosModal = ({ product, open, onClose }) => {
 
     toast.success("Producto agregado al carrito 🛒");
 
-
+    setSelected([]); // limpiamos acá
     onClose();
   };
 
-  if (!product) return null;
+  const handleClose = () => {
+    setSelected([]); // limpiamos al cerrar
+    onClose();
+  };
+
+  if (!product || !open) return null;
 
   return (
-    <Modal open={open} onClose={onClose}>
+    <Modal open={open} onClose={handleClose}>
       <div className="select-modal">
         <div className="select-modal__header">
           <h3>{product.title}</h3>

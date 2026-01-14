@@ -3,6 +3,7 @@ import "../styles/Navbar.scss";
 import cartIcon from "../assets/cart.svg";
 import logo from "../assets/logo-desktop.svg";
 import { Link } from "react-router-dom";
+import HideForAdmin from "./common/HideForAdmin";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -52,11 +53,13 @@ const Navbar = () => {
       </header>
 
       {/* 👉 NUEVA FRANJA INFO */}
-      <div className="navbar__info">
-        <p className="navbar__info__text">
-          ❄️ Helado artesanal · Entrega en 20–30 min
-        </p>
-      </div>
+      <HideForAdmin>
+        <div className="navbar__info">
+          <p className="navbar__info__text">
+            ❄️ Helado artesanal · Entrega en 20–30 min
+          </p>
+        </div>
+      </HideForAdmin>
     </>
   );
 };

@@ -1,0 +1,161 @@
+/* =====================
+   DASHBOARD
+===================== */
+
+.admin-dashboard {
+  max-width: 1200px;
+}
+
+/* =====================
+   GRID MÉTRICAS
+===================== */
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+/* =====================
+   METRIC CARD
+===================== */
+
+.metric-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 20px 24px;
+  border: 1px solid #e5e7eb;
+
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  span {
+    font-size: 14px;
+    font-weight: 600;
+    color: #64748b;
+  }
+
+  strong {
+    font-size: 28px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+}
+
+/* =====================
+   DASHBOARD ACTIONS
+===================== */
+
+.dashboard-actions {
+  display: flex;
+  gap: 12px;
+  margin: 16px 0 24px;
+  flex-wrap: wrap;
+}
+
+/* =====================
+   TOGGLE BUTTONS
+===================== */
+
+.toggle-sales-btn {
+  background: #0f172a;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 14px;
+
+  transition: opacity 0.2s ease;
+
+  &:hover {
+    opacity: 0.9;
+  }
+
+  &.secondary {
+    background: #e5e7eb;
+    color: #0f172a;
+  }
+}
+
+/* =====================
+   SALES BY DAY
+===================== */
+
+.sales-by-day {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+.sales-by-day li {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 10px 14px;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  transition: all 0.2s ease;
+
+  span {
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+  }
+
+  strong {
+    font-size: 14px;
+    font-weight: 800;
+    color: #64748b;
+  }
+
+  &.has-sales {
+    background: #f0fdf4;
+    border-color: #22c55e;
+
+    strong {
+      color: #16a34a;
+    }
+  }
+}
+
+/* =====================
+   TITLES
+===================== */
+
+h2 {
+  font-size: 26px;
+  font-weight: 900;
+  margin-bottom: 16px;
+}
+
+h3 {
+  font-size: 18px;
+  font-weight: 800;
+  margin: 0 0 16px;
+  color: #0f172a;
+}
+
+/* =====================
+   RESPONSIVE
+===================== */
+
+@media (max-width: 640px) {
+  .metric-card strong {
+    font-size: 24px;
+  }
+
+  .sales-by-day {
+    grid-template-columns: 1fr;
+  }
+}

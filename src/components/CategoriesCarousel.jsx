@@ -1,7 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useMemo,
+  useCallback,
+} from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import "../styles/CategoriesCarousel.scss";
-
 import { categories } from "../data/categories";
 
 const ITEMS_PER_VIEW_MOBILE = 2;
@@ -14,29 +19,40 @@ const CategoriesCarousel = () => {
   const { categoria } = useParams();
 
   const [activePage, setActivePage] = useState(0);
-  const [activeIndex, setActiveIndex] = useState(0);
+
+  const activeIndex = useMemo(() => {
+    const index = categories.findIndex(
+      (cat) => cat.slug === categoria
+    );
+    return index !== -1 ? index : 0;
+  }, [categoria]);
 
   const totalPages = Math.ceil(
     categories.length / ITEMS_PER_VIEW_MOBILE
   );
 
-  const scrollToPage = (pageIndex) => {
+  const scrollToPage = useCallback((pageIndex) => {
     const track = trackRef.current;
     const item = itemRef.current;
     if (!track || !item) return;
 
-    const scrollX =
-      item.offsetWidth * ITEMS_PER_VIEW_MOBILE * pageIndex;
-
     track.scrollTo({
-      left: scrollX,
+      left:
+        item.offsetWidth *
+        ITEMS_PER_VIEW_MOBILE *
+        pageIndex,
       behavior: "smooth",
     });
+  }, []);
 
-    setActivePage(pageIndex);
-  };
+  /* Scroll automático según URL */
+  useEffect(() => {
+    scrollToPage(
+      Math.floor(activeIndex / ITEMS_PER_VIEW_MOBILE)
+    );
+  }, [activeIndex, scrollToPage]);
 
-  /* 📜 Sync scroll → dots (SIN RENDERS EN CASCADA) */
+  /* Scroll → dots */
   useEffect(() => {
     const track = trackRef.current;
     const item = itemRef.current;
@@ -47,7 +63,6 @@ const CategoriesCarousel = () => {
 
     const onScroll = () => {
       const page = Math.round(track.scrollLeft / pageWidth);
-
       setActivePage((prev) =>
         prev !== page ? page : prev
       );
@@ -57,9 +72,8 @@ const CategoriesCarousel = () => {
       passive: true,
     });
 
-    return () => {
+    return () =>
       track.removeEventListener("scroll", onScroll);
-    };
   }, []);
 
   return (
@@ -70,16 +84,11 @@ const CategoriesCarousel = () => {
             key={cat.slug}
             ref={index === 0 ? itemRef : null}
             className={`categories__item ${
-              activeIndex === index ? "is-active" : ""
+              index === activeIndex ? "is-active" : ""
             }`}
-            onClick={() => {
-              setActiveIndex(index);
-              scrollToPage(
-                Math.floor(index / ITEMS_PER_VIEW_MOBILE)
-              );
-              navigate(`/gustos/${cat.slug}`);
-            }}
-            aria-label={`Categoría ${cat.title}`}
+            onClick={() =>
+              navigate(`/gustos/${cat.slug}`)
+            }
           >
             <div className="categories__circle">
               <img
@@ -96,7 +105,6 @@ const CategoriesCarousel = () => {
         ))}
       </div>
 
-      {/* DOTS MOBILE */}
       <div className="categories__dots">
         {Array.from({ length: totalPages }).map(
           (_, index) => (
@@ -106,7 +114,6 @@ const CategoriesCarousel = () => {
                 activePage === index ? "is-active" : ""
               }`}
               onClick={() => scrollToPage(index)}
-              aria-label={`Página ${index + 1}`}
             />
           )
         )}
