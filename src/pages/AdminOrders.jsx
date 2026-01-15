@@ -38,17 +38,26 @@ const AdminOrders = () => {
     return () => unsub();
   }, []);
 
+  useEffect(() => {
+    if (orders.length) {
+      console.log("ORDER SAMPLE:", orders[0]);
+      console.log("CUSTOMER:", orders[0].customer);
+    }
+  }, [orders]);
+
+
   const updateStatus = async (id, status) => {
     await updateDoc(doc(db, "orders", id), { status });
   };
 
   const openWhatsApp = (order) => {
-    const phone = order.customer?.phone || "";
+    const phone = order.customer?.phone;
+    if (!phone) return;
+
     const items = order.items
       .map(
         (i) =>
-          `• ${i.title} x${i.quantity}${
-            i.gustos?.length ? ` (${i.gustos.join(", ")})` : ""
+          `• ${i.title} x${i.quantity}${i.gustos?.length ? ` (${i.gustos.join(", ")})` : ""
           }`
       )
       .join("\n");
@@ -67,13 +76,8 @@ Estado: ${order.status}
     window.open(url, "_blank");
   };
 
-  if (loading) {
-    return <p>Cargando pedidos...</p>;
-  }
-
-  if (!orders.length) {
-    return <p>No hay pedidos aún</p>;
-  }
+  if (loading) return <p>Cargando pedidos...</p>;
+  if (!orders.length) return <p>No hay pedidos aún</p>;
 
   return (
     <section className="admin-orders">
@@ -107,11 +111,34 @@ Estado: ${order.status}
             </span>
           </header>
 
-          <p><strong>Total:</strong> ${order.total}</p>
+          <p>
+            <strong>Total:</strong> ${order.total}
+          </p>
 
           {order.customer?.name && (
-            <p><strong>Cliente:</strong> {order.customer.name}</p>
+            <p>
+              <strong>Cliente:</strong> {order.customer.name}
+            </p>
           )}
+
+          {order.customer?.phone ? (
+            <p>
+              <strong>Teléfono:</strong>{" "}
+              <a
+                href={`https://wa.me/${order.customer.phone}`}
+                target="_blank"
+                rel="noreferrer"
+                style={{ fontWeight: 600 }}
+              >
+                {order.customer.phone}
+              </a>
+            </p>
+          ) : (
+            <p style={{ opacity: 0.6 }}>
+              <strong>Teléfono:</strong> no informado
+            </p>
+          )}
+
 
           <ul style={{ marginTop: 8 }}>
             {order.items.map((item, idx) => (
@@ -146,19 +173,3 @@ Estado: ${order.status}
 };
 
 export default AdminOrders;
-
-
-/*
-.admin-orders button {
-  padding: 6px 12px;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.admin-orders button:hover {
-  opacity: 0.85;
-}
-
-*/

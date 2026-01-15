@@ -222,6 +222,47 @@
    DESKTOP
 ============================= */
 
+/* =====================
+   FORM
+===================== */
+
+.carrito-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.carrito-form input {
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* =====================
+   SUCCESS
+===================== */
+
+.order-success {
+  text-align: center;
+  padding: 24px 12px;
+
+  h3 {
+    font-size: 22px;
+    font-weight: 900;
+    margin-bottom: 8px;
+  }
+
+  p {
+    font-size: 14px;
+    color: #475569;
+    margin-bottom: 20px;
+  }
+}
+
+
 @media (min-width: 768px) {
   .carrito {
     padding: 3rem 2rem 10rem;

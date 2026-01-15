@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { getMetrics, getDaysOfMonth } from "../../services/metrics.service";
+import SalesBarChart from "./SalesBarChart";
 import "../../styles/AdminDashboard.scss";
 
 const AdminDashboard = () => {
@@ -25,11 +26,9 @@ const AdminDashboard = () => {
       total: metrics.salesByDay[day] || 0,
     }));
 
-    if (hideEmptyDays) {
-      return days.filter((d) => d.total > 0);
-    }
-
-    return days;
+    return hideEmptyDays
+      ? days.filter((d) => d.total > 0)
+      : days;
   }, [metrics, hideEmptyDays]);
 
   if (!metrics) return <p>Cargando métricas...</p>;
@@ -96,8 +95,16 @@ const AdminDashboard = () => {
               </li>
             ))}
           </ul>
+          <h4>Graficá</h4>
+          <SalesBarChart data={salesByDayComplete} />
         </>
       )}
+      {showDailySales && (
+        <>
+
+        </>
+      )}
+
     </section>
   );
 };

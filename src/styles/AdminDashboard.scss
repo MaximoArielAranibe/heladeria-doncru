@@ -130,6 +130,18 @@
 }
 
 /* =====================
+   BAR CHART
+===================== */
+
+.chart-wrapper {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 32px;
+}
+
+/* =====================
    TITLES
 ===================== */
 
@@ -147,8 +159,53 @@ h3 {
 }
 
 /* =====================
-   RESPONSIVE
+   MOBILE OPTIMIZATION
 ===================== */
+
+@media (max-width: 480px) {
+  .admin-dashboard {
+    padding: 0 8px;
+  }
+
+  .metric-card {
+    padding: 16px;
+
+    span {
+      font-size: 13px;
+    }
+
+    strong {
+      font-size: 22px;
+    }
+  }
+
+  .dashboard-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .toggle-sales-btn {
+    width: 100%;
+    text-align: center;
+  }
+
+  .sales-by-day {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .sales-by-day li {
+    padding: 12px 14px;
+  }
+
+  h2 {
+    font-size: 22px;
+  }
+
+  h3 {
+    font-size: 16px;
+  }
+}
 
 @media (max-width: 640px) {
   .metric-card strong {

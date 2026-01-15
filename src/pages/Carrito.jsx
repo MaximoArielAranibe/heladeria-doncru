@@ -2,6 +2,7 @@ import { useContext, useEffect, useState } from "react";
 import { CartContext } from "../context/CartContext";
 import CartItem from "../components/CartItem";
 import { createOrder } from "../services/orders.service";
+import { normalizePhoneAR, isValidPhoneAR } from "../utils/phone";
 import "../styles/Carrito.scss";
 
 const Carrito = () => {
@@ -10,18 +11,29 @@ const Carrito = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [orderSent, setOrderSent] = useState(false);
+  const [phoneError, setPhoneError] = useState("");
 
+  const [customer, setCustomer] = useState({
+    name: "",
+    phone: "",
+  });
+
+  /* =====================
+     ESC PARA CERRAR MODAL
+  ===================== */
   useEffect(() => {
     const handleEsc = (e) => {
-      if (e.key === "Escape") {
-        setIsModalOpen(false);
-      }
+      if (e.key === "Escape") setIsModalOpen(false);
     };
 
     window.addEventListener("keydown", handleEsc);
     return () => window.removeEventListener("keydown", handleEsc);
   }, []);
 
+  /* =====================
+     TOTAL
+  ===================== */
   const total = cart.reduce(
     (acc, item) => acc + item.price * item.quantity,
     0
@@ -31,6 +43,14 @@ const Carrito = () => {
     (item) => !item.gustos || item.gustos.length === 0
   );
 
+  const isFormInvalid =
+    !customer.name.trim() ||
+    !customer.phone.trim() ||
+    !isValidPhoneAR(customer.phone);
+
+  /* =====================
+     WHATSAPP MESSAGE
+  ===================== */
   const buildWhatsappMessage = (cart, total) => {
     const items = cart
       .map((item) => {
@@ -43,43 +63,51 @@ const Carrito = () => {
       })
       .join("\n");
 
-    const message = `Hola! Quiero hacer este pedido:
+    return encodeURIComponent(
+      `Hola! Soy ${customer.name}
+
+Quiero hacer este pedido:
 
 ${items}
 
-Total: $${total}`;
-
-    return encodeURIComponent(message);
+Total: $${total}`
+    );
   };
 
-  const phone = "+5492477567514";
-
+  /* =====================
+     CONFIRMAR PEDIDO
+  ===================== */
   const handleConfirm = async () => {
     if (isSubmitting) return;
+
+    if (!isValidPhoneAR(customer.phone)) {
+      setPhoneError("Ingresá un teléfono válido");
+      return;
+    }
 
     setIsSubmitting(true);
 
     try {
+      const normalizedPhone = normalizePhoneAR(customer.phone);
+
       const orderId = await createOrder({
         cart,
         total,
         customer: {
-          name: "Cliente WhatsApp", // después lo pedís en un form
-          phone,
+          ...customer,
+          phone: normalizedPhone,
         },
       });
 
       const message = buildWhatsappMessage(cart, total);
 
-      // 👉 Abrimos WhatsApp
       window.open(
-        `https://wa.me/${phone}?text=${message}%0A%0APedido ID: ${orderId}`,
+        `https://wa.me/${normalizedPhone}?text=${message}%0A%0APedido ID: ${orderId}`,
         "_blank"
       );
 
-      // ✅ Limpiamos carrito y cerramos modal
       clearCart();
-      setIsModalOpen(false);
+      setOrderSent(true);
     } catch (error) {
       console.error("Error creando pedido", error);
     } finally {
@@ -87,7 +115,10 @@ Total: $${total}`;
     }
   };
 
-  if (cart.length === 0) {
+  /* =====================
+     EMPTY STATE
+  ===================== */
+  if (cart.length === 0 && !orderSent) {
     return (
       <section className="carrito carrito--empty">
         <h2>Tu carrito está vacío</h2>
@@ -96,6 +127,9 @@ Total: $${total}`;
     );
   }
 
+  /* =====================
+     RENDER
+  ===================== */
   return (
     <section className="carrito">
       <h2 className="carrito__title">Tu pedido</h2>
@@ -128,7 +162,7 @@ Total: $${total}`;
           <button
             className="btn btn--primary"
             onClick={() => setIsModalOpen(true)}
-            disabled={hasInvalidItems || isSubmitting}
+            disabled={hasInvalidItems}
           >
             Confirmar pedido
           </button>
@@ -136,9 +170,8 @@ Total: $${total}`;
       </div>
 
       {/* =============================
-          MODAL DEL CARRITO
+          MODAL
       ============================== */}
-
       {isModalOpen && (
         <div
           className="carrito-modal-overlay"
@@ -148,44 +181,87 @@ Total: $${total}`;
             className="carrito-modal"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3>Confirmar pedido</h3>
+            {!orderSent ? (
+              <>
+                <h3>Datos del pedido</h3>
 
-            <ul className="carrito-modal__list">
-              {cart.map((item) => (
-                <li key={item.cartId}>
-                  <strong>{item.title}</strong> x{item.quantity}
-                  {item.gustos?.length > 0 && (
-                    <div className="carrito-modal__gustos">
-                      Gustos: {item.gustos.join(", ")}
-                    </div>
+                <div className="carrito-form">
+                  <input
+                    type="text"
+                    placeholder="Tu nombre"
+                    value={customer.name}
+                    onChange={(e) =>
+                      setCustomer({
+                        ...customer,
+                        name: e.target.value,
+                      })
+                    }
+                  />
+
+                  <input
+                    type="tel"
+                    placeholder="Tu teléfono"
+                    value={customer.phone}
+                    onChange={(e) => {
+                      setCustomer({
+                        ...customer,
+                        phone: e.target.value,
+                      });
+                      setPhoneError("");
+                    }}
+                    onBlur={() => {
+                      if (!isValidPhoneAR(customer.phone)) {
+                        setPhoneError("Teléfono inválido");
+                      }
+                    }}
+                  />
+
+                  {phoneError && (
+                    <span className="form-error">
+                      {phoneError}
+                    </span>
                   )}
-                </li>
-              ))}
-            </ul>
+                </div>
 
-            <div className="carrito-modal__total">
-              Total: <strong>${total}</strong>
-            </div>
+                <div className="carrito-modal__actions">
+                  <button
+                    className="btn btn--secondary"
+                    onClick={() => setIsModalOpen(false)}
+                  >
+                    Volver
+                  </button>
 
-            <div className="carrito-modal__actions">
-              <button
-                className="btn btn--secondary"
-                onClick={() => setIsModalOpen(false)}
-                disabled={isSubmitting}
-              >
-                Volver
-              </button>
+                  <button
+                    className="btn btn--primary"
+                    onClick={handleConfirm}
+                    disabled={isSubmitting || isFormInvalid}
+                  >
+                    {isSubmitting
+                      ? "Enviando..."
+                      : "Confirmar pedido"}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="order-success">
+                <h3>¡Pedido enviado! 🎉</h3>
+                <p>
+                  Recibimos tu pedido y te contactamos por WhatsApp.
+                </p>
 
-              <button
-                className="btn btn--primary"
-                onClick={handleConfirm}
-                disabled={isSubmitting}
-              >
-                {isSubmitting
-                  ? "Enviando..."
-                  : "Enviar por WhatsApp"}
-              </button>
-            </div>
+                <button
+                  className="btn btn--primary"
+                  onClick={() => {
+                    setOrderSent(false);
+                    setIsModalOpen(false);
+                    setCustomer({ name: "", phone: "" });
+                  }}
+                >
+                  <Link to='/'>Volver al inicio</Link>
+
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
