@@ -44,9 +44,38 @@
     font-size: 1.25rem;
     display: flex;
     justify-content: space-between;
+    align-items: center;
+    gap: 0.8rem;
+    flex-wrap: wrap;
 
     strong {
       font-size: 1.6rem;
+    }
+  }
+
+  /* 🔹 BADGE ENVÍO */
+  &__shipping-badge {
+    background: rgba(0, 0, 0, 0.06);
+    color: #333;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.3rem 0.7rem;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+
+  /* 🔹 INFO ENVÍO */
+  &__shipping-info {
+    padding: 0.75rem 1rem;
+    background: rgba(0, 0, 0, 0.04);
+    border-radius: 12px;
+
+    font-size: 0.85rem;
+    color: #444;
+    line-height: 1.4;
+
+    strong {
+      font-weight: 700;
     }
   }
 
@@ -124,7 +153,7 @@
 }
 
 /* =============================
-   CARRITO MODAL (AISLADO)
+   CARRITO MODAL
 ============================= */
 
 .carrito-modal-overlay {
@@ -162,32 +191,6 @@
     font-size: 1.3rem;
   }
 
-  &__list {
-    list-style: none;
-    padding: 0;
-    margin: 0 0 1.2rem;
-
-    li {
-      font-size: 0.9rem;
-      margin-bottom: 0.6rem;
-    }
-  }
-
-  &__gustos {
-    font-size: 0.8rem;
-    color: #666;
-    margin-top: 0.2rem;
-  }
-
-  &__total {
-    font-size: 1.1rem;
-    margin-bottom: 1.2rem;
-
-    strong {
-      font-size: 1.4rem;
-    }
-  }
-
   &__actions {
     display: flex;
     gap: 0.6rem;
@@ -195,6 +198,46 @@
     button {
       flex: 1;
     }
+  }
+}
+
+/* =============================
+   FORM
+============================= */
+
+.carrito-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 16px 0;
+
+  input {
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    font-size: 14px;
+    font-weight: 600;
+  }
+}
+
+/* =============================
+   SUCCESS
+============================= */
+
+.order-success {
+  text-align: center;
+  padding: 24px 12px;
+
+  h3 {
+    font-size: 22px;
+    font-weight: 900;
+    margin-bottom: 8px;
+  }
+
+  p {
+    font-size: 14px;
+    color: #475569;
+    margin-bottom: 20px;
   }
 }
 
@@ -219,80 +262,51 @@
 }
 
 /* =============================
-   DESKTOP
+   RESPONSIVE
 ============================= */
-
-/* =====================
-   FORM
-===================== */
-
-.carrito-form {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin: 16px 0;
-}
-
-.carrito-form input {
-  padding: 12px 14px;
-  border-radius: 10px;
-  border: 1px solid #e5e7eb;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-/* =====================
-   SUCCESS
-===================== */
-
-.order-success {
-  text-align: center;
-  padding: 24px 12px;
-
-  h3 {
-    font-size: 22px;
-    font-weight: 900;
-    margin-bottom: 8px;
-  }
-
-  p {
-    font-size: 14px;
-    color: #475569;
-    margin-bottom: 20px;
-  }
-}
-
 
 @media (min-width: 768px) {
   .carrito {
-    padding: 3rem 2rem 10rem;
-
-    &__title {
-      padding: 0;
-      font-size: 1.8rem;
-    }
-
-    &__list {
-      padding: 0;
-      gap: 1rem;
-    }
-
     &__footer {
-      flex-direction: row;
-      justify-content: space-between;
-      align-items: center;
-      padding-top: 2rem;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      grid-template-areas:
+        "total actions"
+        "shipping shipping";
+      align-items: start;
+      gap: 1.5rem 2rem;
+    }
+
+    &__total {
+      grid-area: total;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.4rem;
+    }
+
+    &__shipping-badge {
+      margin-top: 0.2rem;
     }
 
     &__actions {
-      flex-wrap: nowrap;
+      grid-area: actions;
+      justify-content: flex-end;
+    }
 
-      button {
-        min-width: 180px;
-      }
+    &__shipping-info {
+      grid-area: shipping;
+      max-width: 600px;
+
+      background: transparent;
+      padding: 0;
+      border-radius: 0;
+
+      font-size: 0.85rem;
+      color: #555;
     }
   }
 }
+
 
 @media (min-width: 1024px) {
   .carrito {

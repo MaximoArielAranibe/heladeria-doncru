@@ -6,8 +6,7 @@ import { createOrder } from "../services/orders.service";
 import { normalizePhoneAR, isValidPhoneAR } from "../utils/phone";
 import "../styles/Carrito.scss";
 
-// 📞 TELÉFONO DEL NEGOCIO (WhatsApp destino)
-const BUSINESS_PHONE = "5492477361535"; // SIN +, SIN espacios
+const BUSINESS_PHONE = "5492477361535";
 
 const Carrito = () => {
   const { cart, removeFromCart, clearCart, updateQuantity } =
@@ -23,9 +22,6 @@ const Carrito = () => {
     phone: "",
   });
 
-  /* =====================
-     ESC PARA CERRAR MODAL
-  ===================== */
   useEffect(() => {
     const handleEsc = (e) => {
       if (e.key === "Escape") setIsModalOpen(false);
@@ -35,9 +31,6 @@ const Carrito = () => {
     return () => window.removeEventListener("keydown", handleEsc);
   }, []);
 
-  /* =====================
-     TOTAL
-  ===================== */
   const total = cart.reduce(
     (acc, item) => acc + item.price * item.quantity,
     0
@@ -52,9 +45,6 @@ const Carrito = () => {
     !customer.phone.trim() ||
     !isValidPhoneAR(customer.phone);
 
-  /* =====================
-     WHATSAPP MESSAGE (NEGRITAS + EMOJIS OK)
-  ===================== */
   const buildWhatsappMessage = (cart, total, orderId) => {
     const items = cart
       .map((item) => {
@@ -62,7 +52,6 @@ const Carrito = () => {
           item.gustos?.length > 0
             ? ` (${item.gustos.join(", ")})`
             : "";
-
         return `- ${item.title} x${item.quantity}${gustosText}`;
       })
       .join("\n");
@@ -74,16 +63,12 @@ Hola! Soy *${customer.name}* 👋
 
 ${items}
 
-*Total:* $${total}
-*Teléfono:* ${customer.phone}
+*Total productos:* $${total}
 
 *Pedido ID:* ${orderId}
     `.trim();
   };
 
-  /* =====================
-     CONFIRMAR PEDIDO
-  ===================== */
   const handleConfirm = async () => {
     if (isSubmitting) return;
 
@@ -95,21 +80,19 @@ ${items}
     setIsSubmitting(true);
 
     try {
-      const normalizedPhone = normalizePhoneAR(customer.phone);
-
       const orderId = await createOrder({
         cart,
         total,
         customer: {
           ...customer,
-          phone: normalizedPhone,
+          phone: normalizePhoneAR(customer.phone),
         },
       });
 
-      const message = buildWhatsappMessage(cart, total, orderId);
-      const encodedMessage = encodeURIComponent(message);
+      const encodedMessage = encodeURIComponent(
+        buildWhatsappMessage(cart, total, orderId)
+      );
 
-      // 👉 api.whatsapp.com (más estable que wa.me)
       window.open(
         `https://api.whatsapp.com/send?phone=${BUSINESS_PHONE}&text=${encodedMessage}`,
         "_blank"
@@ -118,15 +101,12 @@ ${items}
       clearCart();
       setOrderSent(true);
     } catch (error) {
-      console.error("Error creando pedido", error);
+      console.error(error);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  /* =====================
-     EMPTY STATE
-  ===================== */
   if (cart.length === 0 && !orderSent) {
     return (
       <section className="carrito carrito--empty">
@@ -136,12 +116,11 @@ ${items}
     );
   }
 
-  /* =====================
-     RENDER
-  ===================== */
   return (
     <section className="carrito">
-      <h2 className="carrito__title">Tu pedido</h2>
+      <header>
+        <h2 className="carrito__title">Tu pedido</h2>
+      </header>
 
       <ul className="carrito__list">
         {cart.map((item) => (
@@ -154,11 +133,22 @@ ${items}
         ))}
       </ul>
 
-      <div className="carrito__footer">
+      <footer className="carrito__footer">
         <div className="carrito__total">
-          Total: <strong>${total}</strong>
+          <span>
+            Total productos <strong>${total}</strong>
+          </span>
+
+          <span className="carrito__shipping-badge">
+            Envío desde $2.000
+          </span>
         </div>
-        <p>+ El valor del envío  es de $2.000 !! Dentro de los 4 boulevard, luego se cobra por lejanía. </p>
+
+        <aside className="carrito__shipping-info">
+          🚚 <strong>Envío:</strong> Dentro de los 4 bulevares el costo
+          es de <strong>$2.000</strong>. Fuera de esa zona, el valor se
+          ajusta según la distancia. <strong>SE CONFIRMA POR WHATSAPP.</strong>
+        </aside>
 
         <div className="carrito__actions">
           <button
@@ -177,12 +167,12 @@ ${items}
             Confirmar pedido
           </button>
         </div>
-      </div>
+      </footer>
 
       {isModalOpen && (
         <div
           className="carrito-modal-overlay"
-          onClick={() => !isSubmitting && setIsModalOpen(false)}
+          onClick={() => setIsModalOpen(false)}
         >
           <div
             className="carrito-modal"
@@ -194,19 +184,13 @@ ${items}
 
                 <div className="carrito-form">
                   <input
-                    type="text"
                     placeholder="Tu nombre"
                     value={customer.name}
                     onChange={(e) =>
-                      setCustomer({
-                        ...customer,
-                        name: e.target.value,
-                      })
+                      setCustomer({ ...customer, name: e.target.value })
                     }
                   />
-
                   <input
-                    type="tel"
                     placeholder="Tu teléfono"
                     value={customer.phone}
                     onChange={(e) => {
@@ -216,17 +200,13 @@ ${items}
                       });
                       setPhoneError("");
                     }}
-                    onBlur={() => {
-                      if (!isValidPhoneAR(customer.phone)) {
-                        setPhoneError("Teléfono inválido");
-                      }
-                    }}
+                    onBlur={() =>
+                      !isValidPhoneAR(customer.phone) &&
+                      setPhoneError("Teléfono inválido")
+                    }
                   />
-
                   {phoneError && (
-                    <span className="form-error">
-                      {phoneError}
-                    </span>
+                    <span className="form-error">{phoneError}</span>
                   )}
                 </div>
 
@@ -237,35 +217,20 @@ ${items}
                   >
                     Volver
                   </button>
-
                   <button
                     className="btn btn--primary"
                     onClick={handleConfirm}
-                    disabled={isSubmitting || isFormInvalid}
+                    disabled={isFormInvalid || isSubmitting}
                   >
-                    {isSubmitting
-                      ? "Enviando..."
-                      : "Confirmar pedido"}
+                    Confirmar pedido
                   </button>
                 </div>
-                <p>El valor del envío  es de $2.000 dentro de los 4 boulevares, luego se cobra por lejanía.</p>
               </>
             ) : (
               <div className="order-success">
                 <h3>¡Pedido enviado! 🎉</h3>
-                <p>
-                  Recibimos tu pedido y te contactamos por WhatsApp.
-                </p>
-
-                <Link
-                  to="/"
-                  className="btn btn--primary"
-                  onClick={() => {
-                    setOrderSent(false);
-                    setIsModalOpen(false);
-                    setCustomer({ name: "", phone: "" });
-                  }}
-                >
+                <p>Te contactamos por WhatsApp.</p>
+                <Link to="/" className="btn btn--primary">
                   Volver al inicio
                 </Link>
               </div>
