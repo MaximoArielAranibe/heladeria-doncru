@@ -98,3 +98,115 @@
     gap: 1.5rem;
   }
 }
+
+
+/* =====================
+   FILTROS
+===================== */
+
+.products__filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 16px 0 20px;
+}
+
+.filter-btn {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: capitalize;
+
+  &:hover {
+    background: #f9fafb;
+  }
+
+  &.is-active {
+    background: #111;
+    color: #fff;
+    border-color: #111;
+  }
+}
+
+/* =====================
+   GUSTO CARD
+===================== */
+
+.gusto-card {
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: #fff;
+  font-weight: 600;
+  font-size: 14px;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+/* =====================
+ADMIN INLINE EDIT
+===================== */
+
+.gusto-edit {
+  display: flex;
+  flex-flow: column;
+  z-index: 9999;
+  gap: 6px;
+  width: 100%;
+
+  input,
+  select {
+    flex: 1;
+    padding: 6px 8px;
+    font-size: 13px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    font-weight: 600;
+  }
+
+  button {
+    padding: 6px 10px;
+    font-size: 12px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-weight: 700;
+  }
+
+  .save {
+    background: #16a34a;
+    color: #fff;
+  }
+
+  .cancel {
+    background: #e5e7eb;
+    color: #111;
+  }
+}
+
+.gusto-edit-btn {
+  font-size: 12px;
+  font-weight: 700;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #dc2626;
+  z-index: 9999;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.gusto-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}

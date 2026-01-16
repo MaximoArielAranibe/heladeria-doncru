@@ -1,4 +1,11 @@
-export const gustos = [
+import { collection, addDoc, getDocs } from "firebase/firestore";
+import { db } from "../firebase/firebase";
+
+/* =====================
+   DATA
+===================== */
+
+export const gustosSeed = [
   // 🍫 CHOCOLATES
   { name: "Chocolate marroc", slug: "chocolate-marroc", category: "chocolates" },
   { name: "Chocolate shot", slug: "chocolate-shot", category: "chocolates" },
@@ -29,9 +36,30 @@ export const gustos = [
   { name: "Pistacho", slug: "pistacho", category: "cremas" },
   { name: "Sambayón especial", slug: "sambayon-especial", category: "cremas" },
 
-  // 🍓 FRUTALES / FRESCOS
+  // 🍓 FRUTALES
   { name: "Frutilla a la crema con oreo", slug: "frutilla-crema-oreo", category: "frutales" },
   { name: "Mousse de limón", slug: "mousse-limon", category: "frutales" },
   { name: "Coco con dulce de leche", slug: "coco-ddl", category: "frutales" },
   { name: "Banana dolca", slug: "banana-dolca", category: "frutales" },
 ];
+
+/* =====================
+   SEED FUNCTION
+===================== */
+
+export const seedGustos = async () => {
+  const ref = collection(db, "gustos");
+
+  // 🔒 Evitar duplicados
+  const snapshot = await getDocs(ref);
+  if (!snapshot.empty) {
+    console.warn("⚠️ Gustos ya existen. Seed cancelado.");
+    return;
+  }
+
+  for (const gusto of gustosSeed) {
+    await addDoc(ref, gusto);
+  }
+
+  console.log("✅ Gustos cargados correctamente");
+};

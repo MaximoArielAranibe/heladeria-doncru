@@ -7,7 +7,7 @@ import { normalizePhoneAR, isValidPhoneAR } from "../utils/phone";
 import "../styles/Carrito.scss";
 
 // 📞 TELÉFONO DEL NEGOCIO (WhatsApp destino)
-const BUSINESS_PHONE = "5492477567514"; // SIN +, SIN espacios
+const BUSINESS_PHONE = "5492477361535"; // SIN +, SIN espacios
 
 const Carrito = () => {
   const { cart, removeFromCart, clearCart, updateQuantity } =
@@ -53,9 +53,9 @@ const Carrito = () => {
     !isValidPhoneAR(customer.phone);
 
   /* =====================
-     WHATSAPP MESSAGE
+     WHATSAPP MESSAGE (NEGRITAS + EMOJIS OK)
   ===================== */
-  const buildWhatsappMessage = (cart, total) => {
+  const buildWhatsappMessage = (cart, total, orderId) => {
     const items = cart
       .map((item) => {
         const gustosText =
@@ -63,20 +63,22 @@ const Carrito = () => {
             ? ` (${item.gustos.join(", ")})`
             : "";
 
-        return `• ${item.title} x${item.quantity}${gustosText}`;
+        return `- ${item.title} x${item.quantity}${gustosText}`;
       })
       .join("\n");
 
-    return encodeURIComponent(
-      `Hola! Soy ${customer.name} 👋
+    return `
+Hola! Soy *${customer.name}* 👋
 
-Quiero hacer este pedido:
+*Quiero hacer este pedido:*
 
 ${items}
 
-Total: $${total}
-Teléfono: ${customer.phone}`
-    );
+*Total:* $${total}
+*Teléfono:* ${customer.phone}
+
+*Pedido ID:* ${orderId}
+    `.trim();
   };
 
   /* =====================
@@ -104,11 +106,12 @@ Teléfono: ${customer.phone}`
         },
       });
 
-      const message = buildWhatsappMessage(cart, total);
+      const message = buildWhatsappMessage(cart, total, orderId);
+      const encodedMessage = encodeURIComponent(message);
 
-      // 👉 SIEMPRE abre WhatsApp del NEGOCIO
+      // 👉 api.whatsapp.com (más estable que wa.me)
       window.open(
-        `https://wa.me/${BUSINESS_PHONE}?text=${message}%0A%0APedido ID: ${orderId}`,
+        `https://api.whatsapp.com/send?phone=${BUSINESS_PHONE}&text=${encodedMessage}`,
         "_blank"
       );
 
@@ -155,6 +158,7 @@ Teléfono: ${customer.phone}`
         <div className="carrito__total">
           Total: <strong>${total}</strong>
         </div>
+        <p>+ El valor del envío  es de $2.000 !! Dentro de los 4 boulevard, luego se cobra por lejanía. </p>
 
         <div className="carrito__actions">
           <button
@@ -175,9 +179,6 @@ Teléfono: ${customer.phone}`
         </div>
       </div>
 
-      {/* =============================
-          MODAL
-      ============================== */}
       {isModalOpen && (
         <div
           className="carrito-modal-overlay"
@@ -247,6 +248,7 @@ Teléfono: ${customer.phone}`
                       : "Confirmar pedido"}
                   </button>
                 </div>
+                <p>El valor del envío  es de $2.000 dentro de los 4 boulevares, luego se cobra por lejanía.</p>
               </>
             ) : (
               <div className="order-success">

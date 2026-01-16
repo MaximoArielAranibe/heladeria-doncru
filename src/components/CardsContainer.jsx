@@ -5,9 +5,17 @@ import { useProducts } from "../hooks/useProducts";
 const CardsContainer = () => {
   const { products, loading } = useProducts();
 
-  if (loading) return <p>Cargando productos...</p>;
+  if (loading) {
+    return (
+      <div className="cards__container cards__container--loading">
+        <div className="loader">
+          <span className="spinner" />
+          <p>Cargando productos...</p>
+        </div>
+      </div>
+    );
+  }
 
-  // ✅ ORDENAR DE MENOR A MAYOR POR PRECIO
   const sortedProducts = [...products].sort(
     (a, b) => a.price - b.price
   );
@@ -21,7 +29,7 @@ const CardsContainer = () => {
           title={product.title}
           price={product.price}
           thumbnail={product.thumbnail}
-          isFeatured={index === 0}     // el más barato queda destacado
+          isFeatured={index === 0}
           imageRight={index % 2 !== 0}
         />
       ))}

@@ -32,7 +32,9 @@ const Footer = () => {
           <h4>Contacto</h4>
           <p>📍 Pergamino, Buenos Aires</p>
           <p>📞 +54 9 2477-361535</p>
-          <p>🕒 Todos los días 20:00 a 02:00 hs</p>
+          <p>🕒 Todos los días</p>
+          <p>☀️<strong> 12:00hs a 17:30hs</strong></p>
+          <p>🌙<strong>19:00hs a 00:30h</strong></p>
         </div>
       </div>
 

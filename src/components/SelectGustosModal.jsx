@@ -1,16 +1,29 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Modal from "./Modal";
-import { gustos } from "../data/gustos";
 import { useCart } from "../context/useCart";
+import { useGustos } from "../hooks/useGustos";
 import "../styles/SelectGustosModal.scss";
 import toast from "react-hot-toast";
 
 const SelectGustosModal = ({ product, open, onClose }) => {
   const { addToCart } = useCart();
+  const { gustos, loading } = useGustos();
+
   const [selected, setSelected] = useState([]);
 
   const maxGustos = product?.maxGustos ?? 0;
 
+  /* =====================
+     SAFE GUSTOS
+  ===================== */
+  const safeGustos = useMemo(
+    () => (Array.isArray(gustos) ? gustos : []),
+    [gustos]
+  );
+
+  /* =====================
+     TOGGLE
+  ===================== */
   const toggleGusto = (gusto) => {
     setSelected((prev) => {
       if (prev.includes(gusto)) {
@@ -26,6 +39,9 @@ const SelectGustosModal = ({ product, open, onClose }) => {
     });
   };
 
+  /* =====================
+     CONFIRM
+  ===================== */
   const handleConfirm = () => {
     if (selected.length === 0) return;
 
@@ -57,27 +73,31 @@ const SelectGustosModal = ({ product, open, onClose }) => {
         </div>
 
         <div className="select-modal__content">
-          <div className="gustos-grid">
-            {gustos.map((gusto) => {
-              const isSelected = selected.includes(gusto.name);
-              const isDisabled =
-                selected.length >= maxGustos && !isSelected;
+          {loading ? (
+            <p>Cargando gustos...</p>
+          ) : (
+            <div className="gustos-grid">
+              {safeGustos.map((gusto) => {
+                const isSelected = selected.includes(gusto.name);
+                const isDisabled =
+                  selected.length >= maxGustos && !isSelected;
 
-              return (
-                <button
-                  key={gusto.id}
-                  type="button"
-                  className={`gusto-option ${
-                    isSelected ? "is-selected" : ""
-                  }`}
-                  onClick={() => toggleGusto(gusto.name)}
-                  disabled={isDisabled}
-                >
-                  {gusto.name}
-                </button>
-              );
-            })}
-          </div>
+                return (
+                  <button
+                    key={gusto.id}
+                    type="button"
+                    className={`gusto-option ${
+                      isSelected ? "is-selected" : ""
+                    }`}
+                    onClick={() => toggleGusto(gusto.name)}
+                    disabled={isDisabled}
+                  >
+                    {gusto.name}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         <div className="select-modal__footer">

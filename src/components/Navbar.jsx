@@ -2,13 +2,30 @@ import { useState } from "react";
 import "../styles/Navbar.scss";
 import cartIcon from "../assets/cart.svg";
 import logo from "../assets/logo-desktop.svg";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import HideForAdmin from "./common/HideForAdmin";
 import { useAuth } from "../hooks/useAuth";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { user, role } = useAuth();
+  const { pathname } = useLocation();
+
+  const handleLogoClick = () => {
+    setIsOpen(false);
+
+    // 👉 Si ya estoy en home, solo scrolleo
+    if (pathname === "/") {
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
+    }
+  };
+
+  const handleLinkClick = () => {
+    setIsOpen(false);
+  };
 
   return (
     <>
@@ -20,13 +37,17 @@ const Navbar = () => {
       >
         {/* Fila Superior */}
         <div className="navbar__main">
-          <Link to="/" className="navbar__logo">
+          <Link
+            to="/"
+            className="navbar__logo"
+            onClick={handleLogoClick}
+          >
             <img src={logo} alt="Heladería Don Cru" />
           </Link>
 
           <div className="navbar__buttons">
             <div className="navbar__buttons__cart">
-              <Link to="/carrito">
+              <Link to="/carrito" onClick={handleLinkClick}>
                 <img src={cartIcon} alt="Carrito" />
               </Link>
             </div>
@@ -52,15 +73,27 @@ const Navbar = () => {
         {/* Menú Rosa */}
         <nav className={`navbar__menu ${isOpen ? "is-active" : ""}`}>
           <ul className="navbar__menu__list">
-            <li><Link to="/">Inicio</Link></li>
-            <li><Link to="/gustos">Gustos</Link></li>
-            <li><Link to="/tamaños">Tamaños</Link></li>
-            <li><Link to="/contacto">Contacto</Link></li>
+            <li>
+              <Link to="/" onClick={handleLinkClick}>Inicio</Link>
+            </li>
+            <li>
+              <Link to="/gustos" onClick={handleLinkClick}>Gustos</Link>
+            </li>
+            <li>
+              <Link to="/tamaños" onClick={handleLinkClick}>Tamaños</Link>
+            </li>
+            <li>
+              <Link to="/postres" onClick={handleLinkClick}>Postres</Link>
+            </li>
+            <li>
+              <Link to="/contacto" onClick={handleLinkClick}>Contacto</Link>
+            </li>
 
-            {/* 🔐 SOLO ADMIN */}
             {user && role === "admin" && (
               <li className="navbar__menu__admin">
-                <Link to="/admin">Admin</Link>
+                <Link to="/admin" onClick={handleLinkClick}>
+                  Admin
+                </Link>
               </li>
             )}
           </ul>
