@@ -1,3 +1,5 @@
+@use "./OrderHistory";
+
 .admin-orders {
   display: flex;
   flex-direction: column;
@@ -218,3 +220,4 @@
   background: #3b82f6;
   color: #ffffff;
 }
+

@@ -10,6 +10,9 @@ import {
 } from "firebase/firestore";
 import { db } from "../../firebase/firebase";
 import "../../styles/AdminOrders.scss";
+import { logOrderEvent } from "../helper/logOrderEvent.jsx";
+import OrderHistory from "./OrderHistory";
+import { useOrderEvents } from "../../hooks/useOrderEvents.js";
 
 /* =====================
    STATUS LABELS
@@ -21,6 +24,10 @@ const STATUS_LABELS = {
   completed: "Completado",
   cancelled: "Cancelado",
 };
+
+/* =====================
+   NOTIFICATIONS
+===================== */
 
 const requestNotificationPermission = async () => {
   if (!("Notification" in window)) return;
@@ -39,21 +46,27 @@ const showNewOrderNotification = (order) => {
 
   new Notification("🛎️ Nuevo pedido", {
     body: `Pedido de ${order.customer?.name || "Cliente"} · $${order.total}`,
-    icon: "/public/vite.svg", // opcional (public/)
+    icon: "/public/vite.svg",
     silent: false,
   });
 };
 
+/* =====================
+   COMPONENT
+===================== */
 
 const AdminOrders = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
 
+  // 🔔 HISTORIAL GLOBAL
+  const orderEvents = useOrderEvents();
+
   // 🔒 Evita doble suscripción (StrictMode)
   const isSubscribedRef = useRef(false);
 
-  // 🔔 Sonido nuevo pedido
+  // 🔊 Sonido nuevo pedido
   const audioRef = useRef(null);
   const previousCountRef = useRef(0);
 
@@ -78,17 +91,13 @@ const AdminOrders = () => {
         ...docSnap.data(),
       }));
 
-      // 🔔 Nuevo pedido detectado
+      // 🔔 Nuevo pedido
       if (
         previousCountRef.current > 0 &&
         data.length > previousCountRef.current
       ) {
         const newOrder = data[0];
-
-        // 🔊 Sonido
         audioRef.current?.play().catch(() => {});
-
-        // 🖥️ Notificación navegador
         showNewOrderNotification(newOrder);
       }
 
@@ -103,26 +112,20 @@ const AdminOrders = () => {
     };
   }, []);
 
-
   /* =====================
      WHATSAPP AUTOMÁTICO
   ===================== */
 
   const sendWhatsAppStatus = (order, status) => {
     if (!order.customer?.phone) return;
+    if (status !== "in_transit") return;
 
-    let text = "";
-
-    if (status === "in_transit") {
-      text = `Hola ${order.customer?.name || ""} 👋
-Tu pedido ya está EN CAMINO :)
+    const text = `Hola ${order.customer?.name || ""} 👋
+Tu pedido ya está EN CAMINO 🙂
 
 Total: $${order.total} + Envío
 
 ¡Gracias por elegirnos!`;
-    }
-
-    if (!text) return;
 
     window.open(
       `https://wa.me/${order.customer.phone}?text=${encodeURIComponent(text)}`,
@@ -136,18 +139,32 @@ Total: $${order.total} + Envío
 
   const updateStatus = async (order, status) => {
     await updateDoc(doc(db, "orders", order.id), { status });
+
+    await logOrderEvent({
+      orderId: order.id,
+      type: "STATUS_CHANGED",
+      from: order.status,
+      to: status,
+      meta: { whatsappAuto: status === "in_transit" },
+    });
+
     sendWhatsAppStatus(order, status);
   };
 
   const deleteOrder = async (orderId) => {
     try {
+      await logOrderEvent({
+        orderId,
+        type: "ORDER_DELETED",
+      });
+
       await deleteDoc(doc(db, "orders", orderId));
     } catch (error) {
       console.error("DELETE DENEGADO POR FIRESTORE:", error);
     }
   };
 
-  const openWhatsAppManual = (order) => {
+  const openWhatsAppManual = async (order) => {
     if (!order.customer?.phone) return;
 
     const items = order.items
@@ -168,6 +185,12 @@ ${items}
 Total: $${order.total}
 Estado: ${STATUS_LABELS[order.status]}
     `.trim();
+
+    await logOrderEvent({
+      orderId: order.id,
+      type: "WHATSAPP_SENT",
+      meta: { manual: true },
+    });
 
     window.open(
       `https://wa.me/${order.customer.phone}?text=${encodeURIComponent(message)}`,
@@ -202,7 +225,6 @@ Estado: ${STATUS_LABELS[order.status]}
 
   return (
     <section className="admin-orders">
-      {/* 🔊 AUDIO NUEVO PEDIDO */}
       <audio
         ref={audioRef}
         src="/sounds/new-order.wav"
@@ -245,10 +267,15 @@ Estado: ${STATUS_LABELS[order.status]}
               </header>
 
               <div className="order-card__info">
-                <p><strong>Total:</strong> ${order.total}</p>
+                <p>
+                  <strong>Total:</strong> ${order.total}
+                </p>
 
                 {order.customer?.name && (
-                  <p><strong>Cliente:</strong> {order.customer.name}</p>
+                  <p>
+                    <strong>Cliente:</strong>{" "}
+                    {order.customer.name}
+                  </p>
                 )}
 
                 {order.customer?.phone && (
@@ -270,7 +297,10 @@ Estado: ${STATUS_LABELS[order.status]}
                   <li key={idx}>
                     {item.title} x{item.quantity}
                     {item.gustos?.length > 0 && (
-                      <span> ({item.gustos.join(", ")})</span>
+                      <span>
+                        {" "}
+                        ({item.gustos.join(", ")})
+                      </span>
                     )}
                   </li>
                 ))}
@@ -279,47 +309,64 @@ Estado: ${STATUS_LABELS[order.status]}
               <div className="order-card__actions">
                 <button
                   className="btn btn--secondary"
-                  onClick={() => updateStatus(order, "pending")}
+                  onClick={() =>
+                    updateStatus(order, "pending")
+                  }
                 >
                   Pendiente
                 </button>
 
                 <button
                   className="btn btn--whatsapp"
-                  onClick={() => updateStatus(order, "in_transit")}
+                  onClick={() =>
+                    updateStatus(order, "in_transit")
+                  }
                 >
                   En camino 🚚
                 </button>
 
                 <button
                   className="btn btn--primary"
-                  onClick={() => updateStatus(order, "completed")}
+                  onClick={() =>
+                    updateStatus(order, "completed")
+                  }
                 >
                   Completado
                 </button>
 
                 <button
                   className="btn btn--danger"
-                  onClick={() => updateStatus(order, "cancelled")}
+                  onClick={() =>
+                    updateStatus(order, "cancelled")
+                  }
                 >
                   Cancelar
                 </button>
 
                 <button
                   className="btn"
-                  onClick={() => openWhatsAppManual(order)}
+                  onClick={() =>
+                    openWhatsAppManual(order)
+                  }
                 >
                   WhatsApp
                 </button>
 
                 <button
                   className="order-delete-btn"
-                  onClick={() => deleteOrder(order.id)}
+                  onClick={() =>
+                    deleteOrder(order.id)
+                  }
                   title="Eliminar pedido"
                 >
                   ✖
                 </button>
               </div>
+
+              {/* 📜 HISTORIAL */}
+              <OrderHistory
+                events={orderEvents[order.id] || []}
+              />
             </article>
           ))
         )}
