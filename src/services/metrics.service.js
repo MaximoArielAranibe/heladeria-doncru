@@ -18,11 +18,10 @@ export const getDaysOfMonth = (year, month) => {
   return days;
 };
 
-
 export const getMetrics = async () => {
   const q = query(
     collection(db, "orders"),
-    where("status", "==", "paid")
+    where("status", "==", "completed")
   );
 
   const snapshot = await getDocs(q);

@@ -22,6 +22,29 @@ const STATUS_LABELS = {
   cancelled: "Cancelado",
 };
 
+const requestNotificationPermission = async () => {
+  if (!("Notification" in window)) return;
+
+  if (Notification.permission === "default") {
+    await Notification.requestPermission();
+  }
+};
+
+const showNewOrderNotification = (order) => {
+  if (
+    !("Notification" in window) ||
+    Notification.permission !== "granted"
+  )
+    return;
+
+  new Notification("🛎️ Nuevo pedido", {
+    body: `Pedido de ${order.customer?.name || "Cliente"} · $${order.total}`,
+    icon: "/public/vite.svg", // opcional (public/)
+    silent: false,
+  });
+};
+
+
 const AdminOrders = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -39,6 +62,8 @@ const AdminOrders = () => {
   ===================== */
 
   useEffect(() => {
+    requestNotificationPermission();
+
     if (isSubscribedRef.current) return;
     isSubscribedRef.current = true;
 
@@ -53,16 +78,21 @@ const AdminOrders = () => {
         ...docSnap.data(),
       }));
 
-      // 🔔 Sonido SOLO si entra un pedido nuevo
+      // 🔔 Nuevo pedido detectado
       if (
         previousCountRef.current > 0 &&
         data.length > previousCountRef.current
       ) {
+        const newOrder = data[0];
+
+        // 🔊 Sonido
         audioRef.current?.play().catch(() => {});
+
+        // 🖥️ Notificación navegador
+        showNewOrderNotification(newOrder);
       }
 
       previousCountRef.current = data.length;
-
       setOrders(data);
       setLoading(false);
     });
@@ -72,6 +102,7 @@ const AdminOrders = () => {
       isSubscribedRef.current = false;
     };
   }, []);
+
 
   /* =====================
      WHATSAPP AUTOMÁTICO
@@ -89,13 +120,6 @@ Tu pedido ya está *EN CAMINO* 🚚🍦
 Total: $${order.total}
 
 ¡Gracias por elegirnos!`;
-    }
-
-    if (status === "completed") {
-      text = `Hola ${order.customer?.name || ""} 😊
-Tu pedido fue *COMPLETADO* ✅🍦
-
-¡Esperamos que lo disfrutes!`;
     }
 
     if (!text) return;
