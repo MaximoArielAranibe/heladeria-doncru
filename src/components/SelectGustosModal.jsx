@@ -7,10 +7,8 @@ import toast from "react-hot-toast";
 
 const SelectGustosModal = ({ product, open, onClose }) => {
   const { addToCart } = useCart();
-
   const [selected, setSelected] = useState([]);
 
-  // 👉 Derivado directamente del producto (NO state)
   const maxGustos = product?.maxGustos ?? 0;
 
   const toggleGusto = (gusto) => {
@@ -19,7 +17,10 @@ const SelectGustosModal = ({ product, open, onClose }) => {
         return prev.filter((g) => g !== gusto);
       }
 
-      if (prev.length >= maxGustos) return prev;
+      if (prev.length >= maxGustos) {
+        toast.error(`Máximo ${maxGustos} gustos`);
+        return prev;
+      }
 
       return [...prev, gusto];
     });
@@ -34,13 +35,12 @@ const SelectGustosModal = ({ product, open, onClose }) => {
     });
 
     toast.success("Producto agregado al carrito 🛒");
-
-    setSelected([]); // limpiamos acá
+    setSelected([]);
     onClose();
   };
 
   const handleClose = () => {
-    setSelected([]); // limpiamos al cerrar
+    setSelected([]);
     onClose();
   };
 
@@ -66,6 +66,7 @@ const SelectGustosModal = ({ product, open, onClose }) => {
               return (
                 <button
                   key={gusto.id}
+                  type="button"
                   className={`gusto-option ${
                     isSelected ? "is-selected" : ""
                   }`}

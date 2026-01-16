@@ -1,10 +1,16 @@
 import CardVertical from "./CardVertical";
 import "../styles/CardsVerticalContainer.scss";
-import { products } from "../data/products";
+import { useProducts } from "../hooks/useProducts";
 
 export const CardsVerticalContainer = () => {
-  // Filtramos el array para que solo contenga los productos con masVendido: true
-  const bestSellers = products.filter((product) => product.masVendido === true);
+  const { products, loading } = useProducts();
+
+  if (loading) return null;
+
+  // 🔥 BEST SELLERS DESDE FIRESTORE
+  const bestSellers = products.filter(
+    (product) => product.masVendido === true
+  );
 
   return (
     <div className="cards__vertical__container">

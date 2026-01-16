@@ -20,8 +20,6 @@ import AdminLayout from './components/admin/AdminLayout.jsx';
 import AdminDashboard from './components/admin/AdminDashboard.jsx';
 import Orders from './components/admin/Orders.jsx';
 
-
-
 function App() {
   return (
     <CartProvider>

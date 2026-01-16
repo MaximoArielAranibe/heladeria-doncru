@@ -115,9 +115,9 @@ const AdminOrders = () => {
 
     if (status === "in_transit") {
       text = `Hola ${order.customer?.name || ""} 👋
-Tu pedido ya está *EN CAMINO* 🚚🍦
+Tu pedido ya está EN CAMINO :)
 
-Total: $${order.total}
+Total: $${order.total} + Envío
 
 ¡Gracias por elegirnos!`;
     }

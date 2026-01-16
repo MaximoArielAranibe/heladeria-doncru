@@ -4,32 +4,27 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { db } from "../firebase/firebase";
+import { getOrCreateUserId } from "../utils/user.js";
 
 export const createOrder = async ({ cart, total, customer }) => {
+  const userId = getOrCreateUserId();
+
   const order = {
+    userId, // 🔑 CLAVE
     items: cart.map((item) => ({
-      productId: item.id,          // 🔑 importante
+      productId: item.id,
       title: item.title,
       price: item.price,
       quantity: item.quantity,
       gustos: item.gustos || [],
-      category: item.category,     // opcional pero útil
+      category: item.category,
     })),
-
     total,
     status: "pending",
-    customer: {
-      name: customer?.name || null,
-      phone: customer?.phone || null,
-    },
-
+    customer,
     createdAt: serverTimestamp(),
   };
 
-  const docRef = await addDoc(
-    collection(db, "orders"),
-    order
-  );
-
+  const docRef = await addDoc(collection(db, "orders"), order);
   return docRef.id;
 };

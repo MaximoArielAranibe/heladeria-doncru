@@ -41,3 +41,48 @@
     filter: blur(8px);
   }
 }
+
+
+.cards__vertical__container {
+  position: relative; /* CLAVE */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+/* Fondo con imagen desenfocada */
+.cards__vertical__container::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+
+  background: url("../assets/vertical-11.jpeg") center / cover no-repeat;
+  filter: blur(12px);
+  transform: scale(1.1); /* evita bordes cortados */
+  will-change: filter, transform;
+  z-index: 1;
+}
+
+/* Overlay para mejorar contraste */
+.cards__vertical__container::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.25);
+  z-index: 1;
+}
+
+/* Contenido por encima del fondo */
+.cards__vertical__container > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Ajuste mobile */
+@media (max-width: 480px) {
+  .cards__vertical__container::before {
+    filter: blur(8px);
+  }
+}
