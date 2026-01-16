@@ -84,21 +84,24 @@ const AdminDashboard = () => {
         <>
           <h3>Ventas del mes</h3>
 
-          <ul className="sales-by-day">
-            {salesByDayComplete.map(({ day, total }) => (
-              <li
-                key={day}
-                className={total > 0 ? "has-sales" : ""}
-              >
-                <span>{day}</span>
-                <strong>${total}</strong>
-              </li>
-            ))}
-          </ul>
-          <h4>Graficá</h4>
+          {!hideEmptyDays && (
+            <ul className="sales-by-day">
+              {salesByDayComplete.map(({ day, total }) => (
+                <li
+                  key={day}
+                  className={total > 0 ? "has-sales" : ""}
+                >
+                  <span>{day}</span>
+                  <strong>${total}</strong>
+                </li>
+              ))}
+            </ul>
+          )}
+
           <SalesBarChart data={salesByDayComplete} />
         </>
       )}
+
       {showDailySales && (
         <>
 

@@ -11,10 +11,14 @@ import {
 import { db } from "../../firebase/firebase";
 import "../../styles/AdminOrders.scss";
 
+/* =====================
+   STATUS LABELS
+===================== */
+
 const STATUS_LABELS = {
   pending: "Pendiente",
   in_transit: "En camino",
-  paid: "Pagado",
+  completed: "Completado",
   cancelled: "Cancelado",
 };
 
@@ -23,12 +27,17 @@ const AdminOrders = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
 
-  // 🔒 Evita doble suscripción en StrictMode
+  // 🔒 Evita doble suscripción (StrictMode)
   const isSubscribedRef = useRef(false);
+
+  // 🔔 Sonido nuevo pedido
+  const audioRef = useRef(null);
+  const previousCountRef = useRef(0);
 
   /* =====================
      FIRESTORE LISTENER
   ===================== */
+
   useEffect(() => {
     if (isSubscribedRef.current) return;
     isSubscribedRef.current = true;
@@ -44,6 +53,16 @@ const AdminOrders = () => {
         ...docSnap.data(),
       }));
 
+      // 🔔 Sonido SOLO si entra un pedido nuevo
+      if (
+        previousCountRef.current > 0 &&
+        data.length > previousCountRef.current
+      ) {
+        audioRef.current?.play().catch(() => {});
+      }
+
+      previousCountRef.current = data.length;
+
       setOrders(data);
       setLoading(false);
     });
@@ -55,20 +74,28 @@ const AdminOrders = () => {
   }, []);
 
   /* =====================
-     WHATSAPP AUTO
+     WHATSAPP AUTOMÁTICO
   ===================== */
+
   const sendWhatsAppStatus = (order, status) => {
     if (!order.customer?.phone) return;
 
     let text = "";
 
     if (status === "in_transit") {
-      text = `Hola ${order.customer.name || ""} 👋
+      text = `Hola ${order.customer?.name || ""} 👋
 Tu pedido ya está *EN CAMINO* 🚚🍦
 
 Total: $${order.total}
 
 ¡Gracias por elegirnos!`;
+    }
+
+    if (status === "completed") {
+      text = `Hola ${order.customer?.name || ""} 😊
+Tu pedido fue *COMPLETADO* ✅🍦
+
+¡Esperamos que lo disfrutes!`;
     }
 
     if (!text) return;
@@ -82,10 +109,9 @@ Total: $${order.total}
   /* =====================
      ACTIONS
   ===================== */
+
   const updateStatus = async (order, status) => {
     await updateDoc(doc(db, "orders", order.id), { status });
-
-    // 🔔 WhatsApp automático
     sendWhatsAppStatus(order, status);
   };
 
@@ -128,6 +154,7 @@ Estado: ${STATUS_LABELS[order.status]}
   /* =====================
      FILTER
   ===================== */
+
   const filteredOrders =
     filter === "all"
       ? orders
@@ -136,6 +163,7 @@ Estado: ${STATUS_LABELS[order.status]}
   /* =====================
      STATES
   ===================== */
+
   if (loading) {
     return (
       <p className="admin-orders__loading">
@@ -147,8 +175,16 @@ Estado: ${STATUS_LABELS[order.status]}
   /* =====================
      RENDER
   ===================== */
+
   return (
     <section className="admin-orders">
+      {/* 🔊 AUDIO NUEVO PEDIDO */}
+      <audio
+        ref={audioRef}
+        src="/sounds/new-order.wav"
+        preload="auto"
+      />
+
       <header className="admin-orders__header">
         <h2>Pedidos</h2>
 
@@ -159,7 +195,7 @@ Estado: ${STATUS_LABELS[order.status]}
           <option value="all">Todos</option>
           <option value="pending">Pendientes</option>
           <option value="in_transit">En camino</option>
-          <option value="paid">Pagados</option>
+          <option value="completed">Completados</option>
           <option value="cancelled">Cancelados</option>
         </select>
       </header>
@@ -185,15 +221,10 @@ Estado: ${STATUS_LABELS[order.status]}
               </header>
 
               <div className="order-card__info">
-                <p>
-                  <strong>Total:</strong> ${order.total}
-                </p>
+                <p><strong>Total:</strong> ${order.total}</p>
 
                 {order.customer?.name && (
-                  <p>
-                    <strong>Cliente:</strong>{" "}
-                    {order.customer.name}
-                  </p>
+                  <p><strong>Cliente:</strong> {order.customer.name}</p>
                 )}
 
                 {order.customer?.phone && (
@@ -215,10 +246,7 @@ Estado: ${STATUS_LABELS[order.status]}
                   <li key={idx}>
                     {item.title} x{item.quantity}
                     {item.gustos?.length > 0 && (
-                      <span>
-                        {" "}
-                        ({item.gustos.join(", ")})
-                      </span>
+                      <span> ({item.gustos.join(", ")})</span>
                     )}
                   </li>
                 ))}
@@ -226,45 +254,44 @@ Estado: ${STATUS_LABELS[order.status]}
 
               <div className="order-card__actions">
                 <button
-                  className="btn btn--success"
-                  onClick={() =>
-                    updateStatus(order, "paid")
-                  }
+                  className="btn btn--secondary"
+                  onClick={() => updateStatus(order, "pending")}
                 >
-                  Pagado
+                  Pendiente
                 </button>
 
                 <button
                   className="btn btn--whatsapp"
-                  onClick={() =>
-                    updateStatus(order, "in_transit")
-                  }
+                  onClick={() => updateStatus(order, "in_transit")}
                 >
                   En camino 🚚
                 </button>
 
                 <button
+                  className="btn btn--primary"
+                  onClick={() => updateStatus(order, "completed")}
+                >
+                  Completado
+                </button>
+
+                <button
                   className="btn btn--danger"
-                  onClick={() =>
-                    updateStatus(order, "cancelled")
-                  }
+                  onClick={() => updateStatus(order, "cancelled")}
                 >
                   Cancelar
                 </button>
 
                 <button
                   className="btn"
-                  onClick={() =>
-                    openWhatsAppManual(order)
-                  }
+                  onClick={() => openWhatsAppManual(order)}
                 >
                   WhatsApp
                 </button>
 
                 <button
                   className="order-delete-btn"
-                  title="Eliminar pedido"
                   onClick={() => deleteOrder(order.id)}
+                  title="Eliminar pedido"
                 >
                   ✖
                 </button>

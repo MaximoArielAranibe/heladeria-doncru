@@ -1,9 +1,13 @@
 import { useContext, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { CartContext } from "../context/CartContext";
 import CartItem from "../components/CartItem";
 import { createOrder } from "../services/orders.service";
 import { normalizePhoneAR, isValidPhoneAR } from "../utils/phone";
 import "../styles/Carrito.scss";
+
+// 📞 TELÉFONO DEL NEGOCIO (WhatsApp destino)
+const BUSINESS_PHONE = "5492477567514"; // SIN +, SIN espacios
 
 const Carrito = () => {
   const { cart, removeFromCart, clearCart, updateQuantity } =
@@ -64,13 +68,14 @@ const Carrito = () => {
       .join("\n");
 
     return encodeURIComponent(
-      `Hola! Soy ${customer.name}
+      `Hola! Soy ${customer.name} 👋
 
 Quiero hacer este pedido:
 
 ${items}
 
-Total: $${total}`
+Total: $${total}
+Teléfono: ${customer.phone}`
     );
   };
 
@@ -101,8 +106,9 @@ Total: $${total}`
 
       const message = buildWhatsappMessage(cart, total);
 
+      // 👉 SIEMPRE abre WhatsApp del NEGOCIO
       window.open(
-        `https://wa.me/${normalizedPhone}?text=${message}%0A%0APedido ID: ${orderId}`,
+        `https://wa.me/${BUSINESS_PHONE}?text=${message}%0A%0APedido ID: ${orderId}`,
         "_blank"
       );
 
@@ -249,7 +255,8 @@ Total: $${total}`
                   Recibimos tu pedido y te contactamos por WhatsApp.
                 </p>
 
-                <button
+                <Link
+                  to="/"
                   className="btn btn--primary"
                   onClick={() => {
                     setOrderSent(false);
@@ -257,9 +264,8 @@ Total: $${total}`
                     setCustomer({ name: "", phone: "" });
                   }}
                 >
-                  <Link to='/'>Volver al inicio</Link>
-
-                </button>
+                  Volver al inicio
+                </Link>
               </div>
             )}
           </div>

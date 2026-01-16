@@ -4,28 +4,37 @@ import cartIcon from "../assets/cart.svg";
 import logo from "../assets/logo-desktop.svg";
 import { Link } from "react-router-dom";
 import HideForAdmin from "./common/HideForAdmin";
+import { useAuth } from "../hooks/useAuth";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const { user, role } = useAuth();
 
   return (
     <>
-      <header className={`navbar ${isOpen ? "is-open" : ""}`}>
+      <header
+        className={`navbar
+          ${isOpen ? "is-open" : ""}
+          ${user && role === "admin" ? "is-admin" : ""}
+        `}
+      >
         {/* Fila Superior */}
         <div className="navbar__main">
-          <Link to='/' className="navbar__logo">
+          <Link to="/" className="navbar__logo">
             <img src={logo} alt="Heladería Don Cru" />
           </Link>
 
           <div className="navbar__buttons">
             <div className="navbar__buttons__cart">
-              <Link to='/carrito'>
+              <Link to="/carrito">
                 <img src={cartIcon} alt="Carrito" />
               </Link>
             </div>
 
             <div
-              className={`navbar__buttons__burger ${isOpen ? "is-active" : ""}`}
+              className={`navbar__buttons__burger ${
+                isOpen ? "is-active" : ""
+              }`}
               onClick={() => setIsOpen(!isOpen)}
             >
               <button
@@ -45,14 +54,20 @@ const Navbar = () => {
           <ul className="navbar__menu__list">
             <li><Link to="/">Inicio</Link></li>
             <li><Link to="/gustos">Gustos</Link></li>
-            {/*             <li><Link to="/postres">Postres</Link></li> */}
             <li><Link to="/tamaños">Tamaños</Link></li>
             <li><Link to="/contacto">Contacto</Link></li>
+
+            {/* 🔐 SOLO ADMIN */}
+            {user && role === "admin" && (
+              <li className="navbar__menu__admin">
+                <Link to="/admin">Admin</Link>
+              </li>
+            )}
           </ul>
         </nav>
       </header>
 
-      {/* 👉 NUEVA FRANJA INFO */}
+      {/* Franja info solo para usuarios */}
       <HideForAdmin>
         <div className="navbar__info">
           <p className="navbar__info__text">

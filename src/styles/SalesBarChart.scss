@@ -1,25 +1,41 @@
-.bar-chart {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(26px, 1fr));
-  gap: 10px;
-  align-items: flex-end;
+/* =====================
+   BAR CHART
+===================== */
 
-  height: 220px;
-  padding: 16px;
+.bar-chart {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  height: 260px;
+  padding: 16px 8px;
+
+  overflow-x: auto;
+  overflow-y: hidden;
+
+  border-radius: 14px;
   background: #ffffff;
-  border-radius: 16px;
   border: 1px solid #e5e7eb;
 }
 
+/* =====================
+   ITEM
+===================== */
+
 .bar-chart__item {
+  min-width: 38px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  height: 100%;
+  justify-content: flex-end;
+  gap: 6px;
 }
 
+/* =====================
+   BAR
+===================== */
+
 .bar-chart__bar-wrapper {
-  flex: 1;
+  height: 180px;
   width: 100%;
   display: flex;
   align-items: flex-end;
@@ -27,20 +43,69 @@
 
 .bar-chart__bar {
   width: 100%;
-  background: linear-gradient(180deg, #22c55e, #16a34a);
+  background: #e5e7eb;
   border-radius: 6px 6px 0 0;
   transition: height 0.3s ease;
 }
 
+.bar-chart__bar.has-sales {
+  background: linear-gradient(
+    180deg,
+    #22c55e,
+    #16a34a
+  );
+}
+
+/* =====================
+   LABELS
+===================== */
+
 .bar-chart__label {
-  font-size: 11px;
-  font-weight: 600;
-  color: #475569;
-  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #334155;
 }
 
 .bar-chart__value {
   font-size: 11px;
   font-weight: 700;
   color: #16a34a;
+}
+
+/* =====================
+   EMPTY STATE
+===================== */
+
+.bar-chart__empty {
+  text-align: center;
+  padding: 32px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+/* =====================
+   MOBILE
+===================== */
+
+@media (max-width: 480px) {
+  .bar-chart {
+    height: 220px;
+    gap: 10px;
+  }
+
+  .bar-chart__bar-wrapper {
+    height: 140px;
+  }
+
+  .bar-chart__item {
+    min-width: 32px;
+  }
+
+  .bar-chart__label {
+    font-size: 11px;
+  }
+
+  .bar-chart__value {
+    font-size: 10px;
+  }
 }
