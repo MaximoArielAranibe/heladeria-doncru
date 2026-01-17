@@ -6,7 +6,7 @@ import {
 import { db } from "../firebase/firebase";
 import { getOrCreateUserId } from "../utils/user.js";
 
-export const createOrder = async ({ cart, total, customer }) => {
+export const createOrder = async ({ cart, total, customer, shipping }) => {
   const userId = getOrCreateUserId();
 
   const order = {
@@ -20,9 +20,15 @@ export const createOrder = async ({ cart, total, customer }) => {
       category: item.category,
     })),
     total,
+    shipping:{
+      estimated: shipping?.estimated?? null,
+      final: null,
+      zone: shipping?.zone ?? null,
+    },
     status: "pending",
     customer,
     createdAt: serverTimestamp(),
+    archived: false,
   };
 
   const docRef = await addDoc(collection(db, "orders"), order);

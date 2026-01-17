@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { CartContext } from "../context/CartContext";
 import CartItem from "../components/CartItem";
@@ -7,6 +7,17 @@ import { normalizePhoneAR, isValidPhoneAR } from "../utils/phone";
 import "../styles/Carrito.scss";
 
 const BUSINESS_PHONE = "5492477361535";
+
+/* =====================
+   ZONAS DE ENVÍO
+===================== */
+
+const SHIPPING_ZONES = {
+  centro: { label: "Dentro de los 4 bulevares", price: 2000 },
+  media: { label: "Zona intermedia", price: 2500 },
+  lejana: { label: "Zona lejana", price: 3000 },
+  muylejana: { label: "Zona muy lejana", price: null },
+};
 
 const Carrito = () => {
   const { cart, removeFromCart, clearCart, updateQuantity } =
@@ -17,16 +28,14 @@ const Carrito = () => {
   const [orderSent, setOrderSent] = useState(false);
   const [phoneError, setPhoneError] = useState("");
 
-  const [customer, setCustomer] = useState({
-    name: "",
-    phone: "",
-  });
+  const nameRef = useRef("");
+  const directionRef = useRef("");
+  const phoneRef = useRef("");
+
+  const [zone, setZone] = useState("centro");
 
   useEffect(() => {
-    const handleEsc = (e) => {
-      if (e.key === "Escape") setIsModalOpen(false);
-    };
-
+    const handleEsc = (e) => e.key === "Escape" && setIsModalOpen(false);
     window.addEventListener("keydown", handleEsc);
     return () => window.removeEventListener("keydown", handleEsc);
   }, []);
@@ -36,43 +45,44 @@ const Carrito = () => {
     0
   );
 
+  const shippingEstimated = SHIPPING_ZONES[zone]?.price ?? null;
+
   const hasInvalidItems = cart.some(
     (item) => !item.gustos || item.gustos.length === 0
   );
 
-  const isFormInvalid =
-    !customer.name.trim() ||
-    !customer.phone.trim() ||
-    !isValidPhoneAR(customer.phone);
-
-  const buildWhatsappMessage = (cart, total, orderId) => {
+  const buildWhatsappMessage = (orderId) => {
     const items = cart
       .map((item) => {
         const gustosText =
-          item.gustos?.length > 0
-            ? ` (${item.gustos.join(", ")})`
-            : "";
+          item.gustos?.length ? ` (${item.gustos.join(", ")})` : "";
         return `- ${item.title} x${item.quantity}${gustosText}`;
       })
       .join("\n");
 
     return `
-Hola! Soy *${customer.name}* 👋
+*Pedido ID:* ${orderId}
 
-*Quiero hacer este pedido:*
+Hola! Soy *${nameRef.current}* 👋
 
+Dirección: *${directionRef.current}*
+Zona: *${SHIPPING_ZONES[zone].label}*
+
+Pedido:
 ${items}
 
-*Total productos:* $${total}
+Productos: $${total}
+Envío estimado: ${shippingEstimated !== null ? `$${shippingEstimated}` : "A confirmar"
+      }
 
-*Pedido ID:* ${orderId}
+*El costo de envío se confirma por WhatsApp.*
     `.trim();
   };
 
   const handleConfirm = async () => {
     if (isSubmitting) return;
 
-    if (!isValidPhoneAR(customer.phone)) {
+    if (!isValidPhoneAR(phoneRef.current)) {
       setPhoneError("Ingresá un teléfono válido");
       return;
     }
@@ -84,17 +94,20 @@ ${items}
         cart,
         total,
         customer: {
-          ...customer,
-          phone: normalizePhoneAR(customer.phone),
+          name: nameRef.current,
+          direction: directionRef.current,
+          phone: normalizePhoneAR(phoneRef.current),
+        },
+        shipping: {
+          estimated: shippingEstimated,
+          zone,
         },
       });
 
-      const encodedMessage = encodeURIComponent(
-        buildWhatsappMessage(cart, total, orderId)
-      );
-
       window.open(
-        `https://api.whatsapp.com/send?phone=${BUSINESS_PHONE}&text=${encodedMessage}`,
+        `https://api.whatsapp.com/send?phone=${BUSINESS_PHONE}&text=${encodeURIComponent(
+          buildWhatsappMessage(orderId)
+        )}`,
         "_blank"
       );
 
@@ -118,9 +131,7 @@ ${items}
 
   return (
     <section className="carrito">
-      <header>
-        <h2 className="carrito__title">Tu pedido</h2>
-      </header>
+      <h2 className="carrito__title">Tu pedido</h2>
 
       <ul className="carrito__list">
         {cart.map((item) => (
@@ -136,29 +147,26 @@ ${items}
       <footer className="carrito__footer">
         <div className="carrito__total">
           <span>
-            Total productos <strong>${total}</strong>
+            Productos <strong>${total}</strong>
           </span>
-
-          <span className="carrito__shipping-badge">
-            Envío desde $2.000
+          <span>
+            Envío estimado{" "}
+            <strong>
+              {shippingEstimated !== null
+                ? `$${shippingEstimated}`
+                : "A confirmar"}
+            </strong>
           </span>
         </div>
 
         <aside className="carrito__shipping-info">
-          🚚 <strong>Envío:</strong> Dentro de los 4 bulevares el costo
-          es de <strong>$2.000</strong>. Fuera de esa zona, el valor se
-          ajusta según la distancia. <strong>SE CONFIRMA POR WHATSAPP.</strong>
+          🚚 <strong>Te pasamos el costo del envío en breve.</strong>
         </aside>
 
         <div className="carrito__actions">
-          <button
-            className="btn btn--secondary"
-            onClick={clearCart}
-            disabled={isSubmitting}
-          >
+          <button className="btn btn--secondary" onClick={clearCart}>
             Vaciar carrito
           </button>
-
           <button
             className="btn btn--primary"
             onClick={() => setIsModalOpen(true)}
@@ -170,58 +178,40 @@ ${items}
       </footer>
 
       {isModalOpen && (
-        <div
-          className="carrito-modal-overlay"
-          onClick={() => setIsModalOpen(false)}
-        >
-          <div
-            className="carrito-modal"
-            onClick={(e) => e.stopPropagation()}
-          >
+        <div className="carrito-modal-overlay" onClick={() => setIsModalOpen(false)}>
+          <div className="carrito-modal" onClick={(e) => e.stopPropagation()}>
             {!orderSent ? (
               <>
                 <h3>Datos del pedido</h3>
+                <p> 🚚 <strong>Envío:</strong> Dentro de los 4 bulevares el costo es de <strong>$2.000</strong>. Fuera de esa zona, el valor se ajusta según la distancia. <strong>SE CONFIRMA POR WHATSAPP.</strong></p>
 
                 <div className="carrito-form">
-                  <input
-                    placeholder="Tu nombre"
-                    value={customer.name}
-                    onChange={(e) =>
-                      setCustomer({ ...customer, name: e.target.value })
-                    }
-                  />
+                  <input placeholder="Tu nombre" onBlur={(e) => (nameRef.current = e.target.value)} />
+                  <input placeholder="Tu dirección" onBlur={(e) => (directionRef.current = e.target.value)} />
+
+                  <select value={zone} onChange={(e) => setZone(e.target.value)}>
+                    <option value="centro">Dentro de los 4 bulevares ($2000)</option>
+                    <option value="media">Zona intermedia ($2500)</option>
+                    <option value="lejana">Zona lejana ($3000)</option>
+                    <option value="muylejana">Zona muy lejana</option>
+                  </select>
+
                   <input
                     placeholder="Tu teléfono"
-                    value={customer.phone}
-                    onChange={(e) => {
-                      setCustomer({
-                        ...customer,
-                        phone: e.target.value,
-                      });
+                    onBlur={(e) => {
+                      phoneRef.current = e.target.value;
                       setPhoneError("");
                     }}
-                    onBlur={() =>
-                      !isValidPhoneAR(customer.phone) &&
-                      setPhoneError("Teléfono inválido")
-                    }
                   />
-                  {phoneError && (
-                    <span className="form-error">{phoneError}</span>
-                  )}
+
+                  {phoneError && <span className="form-error">{phoneError}</span>}
                 </div>
 
                 <div className="carrito-modal__actions">
-                  <button
-                    className="btn btn--secondary"
-                    onClick={() => setIsModalOpen(false)}
-                  >
+                  <button className="btn btn--secondary" onClick={() => setIsModalOpen(false)}>
                     Volver
                   </button>
-                  <button
-                    className="btn btn--primary"
-                    onClick={handleConfirm}
-                    disabled={isFormInvalid || isSubmitting}
-                  >
+                  <button className="btn btn--primary" onClick={handleConfirm}>
                     Confirmar pedido
                   </button>
                 </div>

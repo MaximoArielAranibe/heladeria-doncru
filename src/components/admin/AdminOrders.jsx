@@ -31,17 +31,13 @@ const STATUS_LABELS = {
 
 const requestNotificationPermission = async () => {
   if (!("Notification" in window)) return;
-
   if (Notification.permission === "default") {
     await Notification.requestPermission();
   }
 };
 
 const showNewOrderNotification = (order) => {
-  if (
-    !("Notification" in window) ||
-    Notification.permission !== "granted"
-  )
+  if (!("Notification" in window) || Notification.permission !== "granted")
     return;
 
   new Notification("🛎️ Nuevo pedido", {
@@ -60,13 +56,9 @@ const AdminOrders = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
 
-  // 🔔 HISTORIAL GLOBAL
   const orderEvents = useOrderEvents();
 
-  // 🔒 Evita doble suscripción (StrictMode)
   const isSubscribedRef = useRef(false);
-
-  // 🔊 Sonido nuevo pedido
   const audioRef = useRef(null);
   const previousCountRef = useRef(0);
 
@@ -91,7 +83,6 @@ const AdminOrders = () => {
         ...docSnap.data(),
       }));
 
-      // 🔔 Nuevo pedido
       if (
         previousCountRef.current > 0 &&
         data.length > previousCountRef.current
@@ -113,27 +104,6 @@ const AdminOrders = () => {
   }, []);
 
   /* =====================
-     WHATSAPP AUTOMÁTICO
-  ===================== */
-
-  const sendWhatsAppStatus = (order, status) => {
-    if (!order.customer?.phone) return;
-    if (status !== "in_transit") return;
-
-    const text = `Hola ${order.customer?.name || ""} 👋
-Tu pedido ya está EN CAMINO 🙂
-
-Total: $${order.total} + Envío
-
-¡Gracias por elegirnos!`;
-
-    window.open(
-      `https://wa.me/${order.customer.phone}?text=${encodeURIComponent(text)}`,
-      "_blank"
-    );
-  };
-
-  /* =====================
      ACTIONS
   ===================== */
 
@@ -145,23 +115,65 @@ Total: $${order.total} + Envío
       type: "STATUS_CHANGED",
       from: order.status,
       to: status,
-      meta: { whatsappAuto: status === "in_transit" },
     });
 
-    sendWhatsAppStatus(order, status);
+    // 📲 WhatsApp automático SOLO cuando está "En camino"
+    if (status === "in_transit" && order.customer?.phone) {
+      const text = `Hola ${order.customer?.name || ""} 👋
+
+  Tu pedido ya está *EN CAMINO* 🚚✨
+
+  Productos: $${order.total}
+  Envío: $${order.shipping?.final}
+  TOTAL: $${order.total + order.shipping?.final}
+
+  ¡Gracias por elegirnos! 🙌🍔`;
+
+      window.open(
+        `https://wa.me/${order.customer.phone}?text=${encodeURIComponent(text)}`,
+        "_blank"
+      );
+    }
   };
 
-  const deleteOrder = async (orderId) => {
-    try {
-      await logOrderEvent({
-        orderId,
-        type: "ORDER_DELETED",
-      });
 
-      await deleteDoc(doc(db, "orders", orderId));
-    } catch (error) {
-      console.error("DELETE DENEGADO POR FIRESTORE:", error);
-    }
+  const updateShipping = async (order, value) => {
+    if (!value || value <= 0) return;
+
+    await updateDoc(doc(db, "orders", order.id), {
+      "shipping.final": value,
+    });
+
+    await logOrderEvent({
+      orderId: order.id,
+      type: "SHIPPING_ADJUSTED",
+      meta: { to: value },
+    });
+
+    const text = `Hola ${order.customer?.name || ""} !!
+
+  El costo de envio hasta tu dirección es de $${value}.
+
+Productos: $${order.total} + Envío: $${value}
+
+*TOTAL:* $${order.total + value}
+
+¿Confirmás el pedido?`;
+
+    window.open(
+      `https://wa.me/${order.customer.phone}?text=${encodeURIComponent(text)}`,
+      "_blank"
+    );
+  };
+
+
+  const deleteOrder = async (orderId) => {
+    await logOrderEvent({
+      orderId,
+      type: "ORDER_DELETED",
+    });
+
+    await deleteDoc(doc(db, "orders", orderId));
   };
 
   const openWhatsAppManual = async (order) => {
@@ -176,21 +188,16 @@ Total: $${order.total} + Envío
       )
       .join("\n");
 
-    const message = `
-Hola 👋
+    const message = `Hola 👋
 Tu pedido es:
 
 ${items}
 
-Total: $${order.total}
-Estado: ${STATUS_LABELS[order.status]}
-    `.trim();
-
-    await logOrderEvent({
-      orderId: order.id,
-      type: "WHATSAPP_SENT",
-      meta: { manual: true },
-    });
+Productos: $${order.total}
+Envío: ${
+      order.shipping?.final ? `$${order.shipping.final}` : "a confirmar"
+    }
+Estado: ${STATUS_LABELS[order.status]}`;
 
     window.open(
       `https://wa.me/${order.customer.phone}?text=${encodeURIComponent(message)}`,
@@ -207,16 +214,8 @@ Estado: ${STATUS_LABELS[order.status]}
       ? orders
       : orders.filter((o) => o.status === filter);
 
-  /* =====================
-     STATES
-  ===================== */
-
   if (loading) {
-    return (
-      <p className="admin-orders__loading">
-        Cargando pedidos...
-      </p>
-    );
+    return <p className="admin-orders__loading">Cargando pedidos...</p>;
   }
 
   /* =====================
@@ -225,19 +224,12 @@ Estado: ${STATUS_LABELS[order.status]}
 
   return (
     <section className="admin-orders">
-      <audio
-        ref={audioRef}
-        src="/sounds/new-order.wav"
-        preload="auto"
-      />
+      <audio ref={audioRef} src="/sounds/new-order.wav" preload="auto" />
 
       <header className="admin-orders__header">
         <h2>Pedidos</h2>
 
-        <select
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-        >
+        <select value={filter} onChange={(e) => setFilter(e.target.value)}>
           <option value="all">Todos</option>
           <option value="pending">Pendientes</option>
           <option value="in_transit">En camino</option>
@@ -247,129 +239,115 @@ Estado: ${STATUS_LABELS[order.status]}
       </header>
 
       <div className="admin-orders__list">
-        {filteredOrders.length === 0 ? (
-          <p className="admin-orders__empty">
-            No hay pedidos para este filtro
-          </p>
-        ) : (
-          filteredOrders.map((order) => (
-            <article key={order.id} className="order-card">
-              <header className="order-card__header">
-                <strong>
-                  Pedido #{order.id.slice(0, 6)}
-                </strong>
+        {filteredOrders.map((order) => (
+          <article key={order.id} className="order-card">
+            <header className="order-card__header">
+              <strong>Pedido #{order.id.slice(0, 6)}</strong>
+              <span className={`order-status order-status--${order.status}`}>
+                {STATUS_LABELS[order.status]}
+              </span>
+            </header>
 
-                <span
-                  className={`order-status order-status--${order.status}`}
-                >
-                  {STATUS_LABELS[order.status]}
-                </span>
-              </header>
+            <div className="order-card__info">
+              <p>
+                <strong>Productos:</strong> ${order.total}
+              </p>
 
-              <div className="order-card__info">
-                <p>
-                  <strong>Total:</strong> ${order.total}
-                </p>
+              <p>
+                <strong>Envío estimado:</strong>{" "}
+                {order.shipping?.estimated
+                  ? `$${order.shipping.estimated}`
+                  : "No informado"}
+              </p>
 
-                {order.customer?.name && (
-                  <p>
-                    <strong>Cliente:</strong>{" "}
-                    {order.customer.name}
-                  </p>
-                )}
+              <p>
+                <strong>Envío final:</strong>{" "}
+                {order.shipping?.final
+                  ? `$${order.shipping.final}`
+                  : "Pendiente"}
+              </p>
+            </div>
 
-                {order.customer?.phone && (
-                  <p>
-                    <strong>Teléfono:</strong>{" "}
-                    <a
-                      href={`https://wa.me/${order.customer.phone}`}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      {order.customer.phone}
-                    </a>
-                  </p>
-                )}
-              </div>
+            <ul className="order-card__items">
+              {order.items.map((item, idx) => (
+                <li key={idx}>
+                  {item.title} x{item.quantity}
+                </li>
+              ))}
+            </ul>
 
-              <ul className="order-card__items">
-                {order.items.map((item, idx) => (
-                  <li key={idx}>
-                    {item.title} x{item.quantity}
-                    {item.gustos?.length > 0 && (
-                      <span>
-                        {" "}
-                        ({item.gustos.join(", ")})
-                      </span>
-                    )}
-                  </li>
-                ))}
-              </ul>
-
-              <div className="order-card__actions">
-                <button
-                  className="btn btn--secondary"
-                  onClick={() =>
-                    updateStatus(order, "pending")
-                  }
-                >
-                  Pendiente
-                </button>
-
-                <button
-                  className="btn btn--whatsapp"
-                  onClick={() =>
-                    updateStatus(order, "in_transit")
-                  }
-                >
-                  En camino 🚚
-                </button>
-
-                <button
-                  className="btn btn--primary"
-                  onClick={() =>
-                    updateStatus(order, "completed")
-                  }
-                >
-                  Completado
-                </button>
-
-                <button
-                  className="btn btn--danger"
-                  onClick={() =>
-                    updateStatus(order, "cancelled")
-                  }
-                >
-                  Cancelar
-                </button>
-
-                <button
-                  className="btn"
-                  onClick={() =>
-                    openWhatsAppManual(order)
-                  }
-                >
-                  WhatsApp
-                </button>
-
-                <button
-                  className="order-delete-btn"
-                  onClick={() =>
-                    deleteOrder(order.id)
-                  }
-                  title="Eliminar pedido"
-                >
-                  ✖
-                </button>
-              </div>
-
-              {/* 📜 HISTORIAL */}
-              <OrderHistory
-                events={orderEvents[order.id] || []}
+            {/* 🔥 INPUT + BOTÓN SIEMPRE VISIBLES */}
+            <div className="order-card__actions">
+              <input
+                type="number"
+                min={0}
+                placeholder="Envío $"
+                className="order-shipping-input"
+                value={order.shipping?.final ?? ""}
+                onChange={(e) =>
+                  updateDoc(doc(db, "orders", order.id), {
+                    "shipping.final": Number(e.target.value),
+                  })
+                }
               />
-            </article>
-          ))
-        )}
+
+              <button
+                className="btn btn--primary"
+                disabled={!order.shipping?.final}
+                onClick={() =>
+                  updateShipping(order, order.shipping.final)
+                }
+              >
+                Mandar costo de envio
+              </button>
+
+              <button
+                className="btn btn--secondary"
+                onClick={() => updateStatus(order, "pending")}
+              >
+                Pendiente
+              </button>
+
+              <button
+                className="btn btn--whatsapp"
+                disabled={!order.shipping?.final}
+                onClick={() => updateStatus(order, "in_transit")}
+              >
+                En camino 🚚
+              </button>
+
+              <button
+                className="btn btn--primary"
+                onClick={() => updateStatus(order, "completed")}
+              >
+                Completado
+              </button>
+
+              <button
+                className="btn btn--danger"
+                onClick={() => updateStatus(order, "cancelled")}
+              >
+                Cancelar
+              </button>
+
+              <button
+                className="btn"
+                onClick={() => openWhatsAppManual(order)}
+              >
+                WhatsApp
+              </button>
+
+              <button
+                className="order-delete-btn"
+                onClick={() => deleteOrder(order.id)}
+              >
+                ✖
+              </button>
+            </div>
+
+            <OrderHistory events={orderEvents[order.id] || []} />
+          </article>
+        ))}
       </div>
     </section>
   );
