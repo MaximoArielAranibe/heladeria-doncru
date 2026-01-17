@@ -16,6 +16,23 @@ import { useOrderEvents } from "../../hooks/useOrderEvents.js";
 /* =====================
   EMOJIS (UNICODE SAFE)
 ===================== */
+const requestNotificationPermission = async () => {
+  if (!("Notification" in window)) return;
+  if (Notification.permission === "default") {
+    await Notification.requestPermission();
+  }
+};
+
+const showNewOrderNotification = (order) => {
+  if (!("Notification" in window) || Notification.permission !== "granted")
+    return;
+
+  new Notification("🛎️ Nuevo pedido", {
+    body: `Pedido de ${order.customer?.name || "Cliente"} · $${order.total}`,
+    icon: "/public/vite.svg",
+  });
+};
+
 
 const EMOJI = {
   wave: "\u{1F44B}",
@@ -120,6 +137,9 @@ const AdminOrders = () => {
   }, []);
 
   useEffect(() => {
+  };
+
+  requestNotificationPermission();
     if (isSubscribedRef.current) return;
     isSubscribedRef.current = true;
 
@@ -141,6 +161,7 @@ const AdminOrders = () => {
         // fallback to getDocs so the UI can at least show data
         loadWithFallback(unsubscribe);
       }
+
     );
 
     return () => {
