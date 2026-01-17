@@ -1,12 +1,11 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import {
   collection,
   onSnapshot,
   updateDoc,
   deleteDoc,
   doc,
-  orderBy,
-  query,
+  getDocs,
 } from "firebase/firestore";
 import { db } from "../../firebase/firebase";
 import "../../styles/AdminOrders.scss";
@@ -15,7 +14,21 @@ import OrderHistory from "./OrderHistory";
 import { useOrderEvents } from "../../hooks/useOrderEvents.js";
 
 /* =====================
-   STATUS LABELS
+  EMOJIS (UNICODE SAFE)
+===================== */
+
+const EMOJI = {
+  wave: "\u{1F44B}",
+  truck: "\u{1F69A}",
+  sparkles: "\u{2728}",
+  hands: "\u{1F64C}",
+  iceCream: "\u{1F366}",     // 🍦
+  iceCreamCup: "\u{1F368}", // 🍨
+  shavedIce: "\u{1F367}",   // 🍧
+};
+
+/* =====================
+  STATUS LABELS
 ===================== */
 
 const STATUS_LABELS = {
@@ -26,211 +39,225 @@ const STATUS_LABELS = {
 };
 
 /* =====================
-   NOTIFICATIONS
+  WHATSAPP HELPERS
 ===================== */
 
-const requestNotificationPermission = async () => {
-  if (!("Notification" in window)) return;
-  if (Notification.permission === "default") {
-    await Notification.requestPermission();
-  }
+const sendWhatsAppMessage = (phone, message) => {
+  if (!phone) return;
+
+  const cleanPhone = phone.replace(/\D/g, "");
+
+  // ✅ UTF-8 correcto (emojis + acentos)
+  const encodedMessage = encodeURIComponent(message);
+
+  window.open(
+    `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodedMessage}`,
+    "_blank"
+  );
 };
 
-const showNewOrderNotification = (order) => {
-  if (!("Notification" in window) || Notification.permission !== "granted")
-    return;
 
-  new Notification("🛎️ Nuevo pedido", {
-    body: `Pedido de ${order.customer?.name || "Cliente"} · $${order.total}`,
-    icon: "/public/vite.svg",
-  });
-};
+const buildShippingMessage = (order, value) =>
+  [
+    `Hola ${order.customer?.name || ""} ${EMOJI.wave} ${EMOJI.iceCream}`,
+    ``,
+    `¡Tu pedido está casi listo!`,
+    ``,
+    `🚚 El costo de envío hasta tu dirección es de $${value}.`,
+    ``,
+    `🧾 Resumen del pedido:`,
+    `• Productos: $${order.total}`,
+    `• Envío: $${value}`,
+    ``,
+    `• TOTAL con envío: $*${(order.total ?? 0) + value}*`,
+    ``,
+    `¿Confirmás el pedido para enviarlo? ${EMOJI.sparkles}`,
+  ].join("\n");
+
+const buildInTransitMessage = (order) =>
+  [
+    `Tu pedido ya está en camino ${EMOJI.sparkles}`,
+    ``,
+    `¡Gracias ${order.customer?.name || ""} por elegir Helados Doncru! ${EMOJI.iceCream} ${EMOJI.hands}`,
+  ].join("\n");
+
 
 /* =====================
-   COMPONENT
+  COMPONENT
 ===================== */
 
 const AdminOrders = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
-
+  const [fetchError, setFetchError] = useState(null);
   const orderEvents = useOrderEvents();
-
   const isSubscribedRef = useRef(false);
-  const audioRef = useRef(null);
-  const previousCountRef = useRef(0);
 
-  /* =====================
-     FIRESTORE LISTENER
-  ===================== */
+  const loadWithFallback = useCallback(async (unsubscribeFn) => {
+    // fallback: try a plain getDocs read (no orderBy) to at least fetch data once
+    try {
+      const colRef = collection(db, "orders");
+      const snap = await getDocs(colRef);
+      const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      setOrders(docs);
+      setLoading(false);
+      setFetchError(null);
+      // unsubscribe the failing onSnapshot (if provided)
+      if (typeof unsubscribeFn === "function") {
+        try {
+          unsubscribeFn();
+        } catch (e) {
+          console.log(e);
+
+        }
+      }
+    } catch (err) {
+      console.error("Fallback getDocs failed:", err);
+      setFetchError(err?.message || "Error desconocido al leer pedidos");
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    requestNotificationPermission();
-
     if (isSubscribedRef.current) return;
     isSubscribedRef.current = true;
 
-    const q = query(
-      collection(db, "orders"),
-      orderBy("createdAt", "desc")
+    // Prefer simple collection streaming (no orderBy) to avoid issues
+    const colRef = collection(db, "orders");
+    const q = colRef; // keep it plain; if you want ordering add checks/migration
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        setOrders(snapshot.docs.map((d) => ({ id: d.id, ...d.data() })));
+        setLoading(false);
+        setFetchError(null);
+      },
+      (error) => {
+        // If onSnapshot errors (rules, invalid index, etc.) -> try fallback once
+        console.error("onSnapshot error:", error);
+        setFetchError(error?.message || "Error al suscribirse a pedidos");
+        // fallback to getDocs so the UI can at least show data
+        loadWithFallback(unsubscribe);
+      }
     );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map((docSnap) => ({
-        id: docSnap.id,
-        ...docSnap.data(),
-      }));
-
-      if (
-        previousCountRef.current > 0 &&
-        data.length > previousCountRef.current
-      ) {
-        audioRef.current?.play().catch(() => {});
-        showNewOrderNotification(data[0]);
-      }
-
-      previousCountRef.current = data.length;
-      setOrders(data);
-      setLoading(false);
-    });
-
     return () => {
-      unsubscribe();
+      try {
+        unsubscribe();
+      } catch (e) {
+        {
+          console.error(e);
+        }
+      }
       isSubscribedRef.current = false;
     };
-  }, []);
+  }, [loadWithFallback]);
 
   /* =====================
-     ACTIONS
+  ACTIONS
   ===================== */
 
   const updateStatus = async (order, status) => {
-    await updateDoc(doc(db, "orders", order.id), { status });
+    try {
+      await updateDoc(doc(db, "orders", order.id), { status });
 
-    await logOrderEvent({
-      orderId: order.id,
-      type: "STATUS_CHANGED",
-      from: order.status,
-      to: status,
-    });
+      await logOrderEvent({
+        orderId: order.id,
+        type: "STATUS_CHANGED",
+        from: order.status,
+        to: status,
+      });
 
-    if (status === "in_transit" && order.customer?.phone) {
-      const text = `Hola ${order.customer?.name || ""} 👋
-
-Tu pedido ya está *EN CAMINO* 🚚✨
-
-Productos: $${order.total}
-Envío: $${order.shipping?.final}
-TOTAL: $${order.total + order.shipping?.final}
-
-¡Gracias por elegirnos! 🙌🍔`;
-
-      window.open(
-        `https://wa.me/${order.customer.phone}?text=${encodeURIComponent(text)}`,
-        "_blank"
-      );
+      if (status === "in_transit") {
+        sendWhatsAppMessage(order.customer?.phone, buildInTransitMessage(order));
+      }
+    } catch (error) {
+      console.error("updateStatus error:", error);
     }
   };
 
   const updateShipping = async (order, value) => {
     if (!value || value <= 0) return;
 
-    await updateDoc(doc(db, "orders", order.id), {
-      "shipping.final": value,
-    });
+    try {
+      await updateDoc(doc(db, "orders", order.id), {
+        "shipping.final": value,
+      });
 
-    await logOrderEvent({
-      orderId: order.id,
-      type: "SHIPPING_ADJUSTED",
-      meta: { to: value },
-    });
+      await logOrderEvent({
+        orderId: order.id,
+        type: "SHIPPING_ADJUSTED",
+        meta: { to: value },
+      });
 
-    const text = `Hola ${order.customer?.name || ""} !!
-
-El costo de envio hasta tu dirección es de $${value}.
-
-Productos: $${order.total} + Envío: $${value}
-
-*TOTAL:* $${order.total + value}
-
-¿Confirmás el pedido?`;
-
-    window.open(
-      `https://wa.me/${order.customer.phone}?text=${encodeURIComponent(text)}`,
-      "_blank"
-    );
+      sendWhatsAppMessage(order.customer?.phone, buildShippingMessage(order, value));
+    } catch (error) {
+      console.error("updateShipping error:", error);
+    }
   };
 
   const deleteOrder = async (orderId) => {
-    await logOrderEvent({
-      orderId,
-      type: "ORDER_DELETED",
-    });
+    try {
+      await logOrderEvent({
+        orderId,
+        type: "ORDER_DELETED",
+      });
 
-    await deleteDoc(doc(db, "orders", orderId));
-  };
-
-  const openWhatsAppManual = (order) => {
-    if (!order.customer?.phone) return;
-
-    const items = order.items
-      .map(
-        (i) =>
-          `• ${i.title} x${i.quantity}${
-            i.gustos?.length ? ` (${i.gustos.join(", ")})` : ""
-          }`
-      )
-      .join("\n");
-
-    const message = `Hola 👋
-Tu pedido es:
-
-${items}
-
-Productos: $${order.total}
-Envío: ${
-      order.shipping?.final ? `$${order.shipping.final}` : "a confirmar"
+      await deleteDoc(doc(db, "orders", orderId));
+    } catch (error) {
+      console.error("deleteOrder error:", error);
     }
-Estado: ${STATUS_LABELS[order.status]}`;
-
-    window.open(
-      `https://wa.me/${order.customer.phone}?text=${encodeURIComponent(message)}`,
-      "_blank"
-    );
   };
+
+  const filteredOrders = filter === "all" ? orders : orders.filter((o) => o.status === filter);
 
   /* =====================
-     FILTER
+    RENDER
   ===================== */
-
-  const filteredOrders =
-    filter === "all"
-      ? orders
-      : orders.filter((o) => o.status === filter);
 
   if (loading) {
     return <p className="admin-orders__loading">Cargando pedidos...</p>;
   }
 
-  /* =====================
-     RENDER
-  ===================== */
-
   return (
     <main className="admin-orders">
-      <audio ref={audioRef} src="/sounds/new-order.wav" preload="auto" />
-
       <header className="admin-orders__header">
         <h2>Pedidos</h2>
 
-        <select value={filter} onChange={(e) => setFilter(e.target.value)}>
-          <option value="all">Todos</option>
-          <option value="pending">Pendientes</option>
-          <option value="in_transit">En camino</option>
-          <option value="completed">Completados</option>
-          <option value="cancelled">Cancelados</option>
-        </select>
+        <div className="admin-orders__controls" style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <select value={filter} onChange={(e) => setFilter(e.target.value)}>
+            <option value="all">Todos</option>
+            <option value="pending">Pendientes</option>
+            <option value="in_transit">En camino</option>
+            <option value="completed">Completados</option>
+            <option value="cancelled">Cancelados</option>
+          </select>
+
+          {fetchError && (
+            <div style={{ color: "crimson", fontSize: 13 }}>
+              Error al cargar: {fetchError}
+              <button
+                className="btn btn--secondary"
+                style={{ marginLeft: 8 }}
+                onClick={() => {
+                  setLoading(true);
+                  setFetchError(null);
+                  // Forzar re-mount of effect by toggling isSubscribedRef (simple hack)
+                  isSubscribedRef.current = false;
+                  // small timeout to ensure effect can re-run
+                  setTimeout(() => {
+                    setLoading(true);
+                    // no-op: effect will run because isSubscribedRef was set false
+                  }, 50);
+                }}
+              >
+                Reintentar
+              </button>
+            </div>
+          )}
+        </div>
       </header>
 
       <section className="admin-orders__list">
@@ -244,14 +271,36 @@ Estado: ${STATUS_LABELS[order.status]}`;
             </header>
 
             <section className="order-card__info">
-              <p><strong>Productos:</strong> ${order.total}</p>
-              <p><strong>Envío estimado:</strong> {order.shipping?.estimated ?? "No informado"}</p>
-              <p><strong>Envío final:</strong> {order.shipping?.final ?? "Pendiente"}</p>
+              <p>
+                <strong>Productos:</strong> ${order.total}
+              </p>
+              <p>
+                <strong>Envío estimado:</strong> {order.shipping?.estimated ?? "No informado"}
+              </p>
+              <p>
+                <strong>Envío final:</strong> {order.shipping?.final ?? "Pendiente"}
+              </p>
+              {order.customer?.name && (
+                <p>
+                  <strong>Cliente:</strong> {order.customer.name}
+                </p>
+              )}
+              {order.customer?.phone && (
+                <p>
+                  <strong>Teléfono:</strong>{" "}
+                  <a href={`https://wa.me/${order.customer.phone}`} target="_blank" rel="noreferrer">
+                    {order.customer.phone}
+                  </a>
+                </p>
+              )}
             </section>
 
             <ul className="order-card__items">
-              {order.items.map((item, idx) => (
-                <li key={idx}>{item.title} x{item.quantity}</li>
+              {order.items?.map((item, idx) => (
+                <li key={idx}>
+                  {item.title} x{item.quantity}
+                  {item.gustos?.length ? ` (${item.gustos.join(", ")})` : ""}
+                </li>
               ))}
             </ul>
 
@@ -297,7 +346,7 @@ Estado: ${STATUS_LABELS[order.status]}`;
                 Cancelar
               </button>
 
-              <button className="btn" onClick={() => openWhatsAppManual(order)}>
+              <button className="btn" onClick={() => sendWhatsAppMessage(order.customer?.phone, buildShippingMessage(order, order.shipping?.final ?? 0))}>
                 WhatsApp
               </button>
 
