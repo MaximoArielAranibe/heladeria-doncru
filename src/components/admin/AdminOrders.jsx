@@ -6,6 +6,7 @@ import {
   deleteDoc,
   doc,
   getDocs,
+  serverTimestamp,
 } from "firebase/firestore";
 import { db } from "../../firebase/firebase";
 import "../../styles/AdminOrders.scss";
@@ -160,6 +161,7 @@ const AdminOrders = () => {
   ===================== */
 
   const updateStatus = async (order, status) => {
+    const ref = db(db, "orders,id")
     try {
       await updateDoc(doc(db, "orders", order.id), { status });
 
@@ -172,6 +174,14 @@ const AdminOrders = () => {
 
       if (status === "in_transit") {
         sendWhatsAppMessage(order.customer?.phone, buildInTransitMessage(order));
+      }
+
+      if (status === "completed") {
+        await updateDoc(ref, {
+          status: "completed",
+          completedAt: serverTimestamp(),
+          archivied: false,
+        })
       }
     } catch (error) {
       console.error("updateStatus error:", error);

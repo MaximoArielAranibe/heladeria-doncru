@@ -1,6 +1,7 @@
 import {
   collection,
   getDocs,
+  orderBy,
   query,
   where,
 } from "firebase/firestore";
@@ -21,7 +22,8 @@ export const getDaysOfMonth = (year, month) => {
 export const getMetrics = async () => {
   const q = query(
     collection(db, "orders"),
-    where("status", "==", "completed")
+    where("status", "==", "false"),
+    orderBy("createdAt", "desc")
   );
 
   const snapshot = await getDocs(q);

@@ -8,6 +8,11 @@ import {
   query,
 } from "firebase/firestore";
 import { db } from "../firebase/firebase";
+import { useSound } from "../hooks/useSound";
+
+/* =====================
+   CONSTANTES
+===================== */
 
 const STATUS_COLORS = {
   pending: "#facc15",
@@ -16,7 +21,7 @@ const STATUS_COLORS = {
 };
 
 /* =====================
-  NOTIFICATIONS + SOUND
+   NOTIFICACIONES
 ===================== */
 
 const requestNotificationPermission = async () => {
@@ -36,68 +41,31 @@ const showNewOrderNotification = (order) => {
   });
 };
 
+/* =====================
+   COMPONENT
+===================== */
+
 const AdminOrders = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const prevOrdersCountRef = useRef(0);
 
-  // 🔊 AudioContext (clave)
-  const audioContextRef = useRef(null);
-  const audioBufferRef = useRef(null);
-  const audioUnlockedRef = useRef(false);
+  // ✅ EL HOOK VA ACÁ
+  const sound = useSound("/sounds/new-order.wav");
 
-  /* 🔓 Desbloqueo REAL de audio */
-  useEffect(() => {
-    const unlockAudio = async () => {
-      if (audioUnlockedRef.current) return;
+  /* =====================
+     INIT
+  ===================== */
 
-      try {
-        const AudioContext =
-          window.AudioContext || window.webkitAudioContext;
-
-        const ctx = new AudioContext();
-        const response = await fetch("/sounds/new-order.wav");
-        const arrayBuffer = await response.arrayBuffer();
-        const buffer = await ctx.decodeAudioData(arrayBuffer);
-
-        audioContextRef.current = ctx;
-        audioBufferRef.current = buffer;
-        audioUnlockedRef.current = true;
-      } catch (e) {
-        console.error("Audio unlock failed", e);
-      }
-
-      window.removeEventListener("click", unlockAudio);
-    };
-
-    window.addEventListener("click", unlockAudio);
-    return () => window.removeEventListener("click", unlockAudio);
-  }, []);
-
-  const playNewOrderSound = async () => {
-    if (!audioContextRef.current || !audioBufferRef.current) return;
-
-    try {
-      if (audioContextRef.current.state === "suspended") {
-        await audioContextRef.current.resume();
-      }
-
-      const source = audioContextRef.current.createBufferSource();
-      source.buffer = audioBufferRef.current;
-      source.connect(audioContextRef.current.destination);
-      source.start(0);
-    } catch (e) {
-      console.error("Sound play failed", e);
-    }
-  };
-
-  /* Permiso notificaciones */
   useEffect(() => {
     requestNotificationPermission();
   }, []);
 
-  /* Firestore listener */
+  /* =====================
+     FIRESTORE LISTENER
+  ===================== */
+
   useEffect(() => {
     const q = query(
       collection(db, "orders"),
@@ -110,23 +78,25 @@ const AdminOrders = () => {
         ...doc.data(),
       }));
 
-      // 🔔 + 🔊 pedido nuevo real
       if (
         prevOrdersCountRef.current > 0 &&
         data.length > prevOrdersCountRef.current
       ) {
         showNewOrderNotification(data[0]);
-        playNewOrderSound();
+        sound.play(); // 🔊 AHORA SÍ
       }
 
       prevOrdersCountRef.current = data.length;
-
       setOrders(data);
       setLoading(false);
     });
 
     return () => unsub();
   }, []);
+
+  /* =====================
+     ACTIONS
+  ===================== */
 
   const updateStatus = async (id, status) => {
     await updateDoc(doc(db, "orders", id), { status });
@@ -159,17 +129,34 @@ Estado: ${order.status}
     window.open(url, "_blank");
   };
 
+  /* =====================
+     RENDER
+  ===================== */
+
   if (loading) return <p>Cargando pedidos...</p>;
   if (!orders.length) return <p>No hay pedidos aún</p>;
 
   return (
     <section className="admin-orders">
-      <h2>Pedidos</h2>
+      <header style={{ display: "flex", gap: 12, marginBottom: 20 }}>
+        <h2>Pedidos</h2>
+
+        {!sound.enabled ? (
+          <button onClick={sound.unlock}>
+            🔔 Activar sonido
+            {alert("unlock ejecutado");
+            }
+          </button>
+        ) : (
+          <button onClick={sound.toggle}>
+            🔊 Sonido activado
+          </button>
+        )}
+      </header>
 
       {orders.map((order) => (
         <article
           key={order.id}
-          className="order-card"
           style={{
             border: "1px solid #e5e7eb",
             borderRadius: 12,
@@ -185,7 +172,6 @@ Estado: ${order.status}
                 padding: "4px 10px",
                 borderRadius: 999,
                 background: STATUS_COLORS[order.status],
-                color: "#111",
                 fontWeight: 600,
                 fontSize: 12,
               }}
@@ -194,19 +180,15 @@ Estado: ${order.status}
             </span>
           </header>
 
-          <p>
-            <strong>Total:</strong> ${order.total}
-          </p>
+          <p><strong>Total:</strong> ${order.total}</p>
 
-          <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+          <div style={{ display: "flex", gap: 8 }}>
             <button onClick={() => updateStatus(order.id, "paid")}>
               Marcar pagado
             </button>
-
             <button onClick={() => updateStatus(order.id, "cancelled")}>
               Cancelar
             </button>
-
             {order.customer?.phone && (
               <button onClick={() => openWhatsApp(order)}>
                 WhatsApp
