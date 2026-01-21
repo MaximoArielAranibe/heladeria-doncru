@@ -3,7 +3,7 @@ import "../styles/Navbar.scss";
 import cartIcon from "../assets/cart.svg";
 import logo from "../assets/logo-desktop.svg";
 import { Link, useLocation } from "react-router-dom";
-import HideForAdmin from "./common/HideForAdmin";
+import HideForAdmin from "../components/admin/common/HideForAdmin";
 import { useAuth } from "../hooks/useAuth";
 
 const Navbar = () => {

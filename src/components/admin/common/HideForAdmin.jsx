@@ -1,4 +1,4 @@
-import { useAuth } from "../../hooks/useAuth";
+import { useAuth } from "../../../hooks/useAuth";
 
 const HideForAdmin = ({ children }) => {
   const { role, loading } = useAuth();
