@@ -8,7 +8,7 @@ import {
 import { db } from "../firebase/firebase";
 
 /* =====================
-   HELPERS
+  HELPERS
 ===================== */
 
 export const getDaysOfMonth = (year, month) => {
@@ -29,15 +29,13 @@ const normalizeNumber = (value) => {
 };
 
 /* =====================
-   METRICS
+  METRICS
 ===================== */
 
 export const getMetrics = async () => {
   const q = query(
     collection(db, "orders"),
     where("status", "==", "completed"),
-    where("archived", "!=", true), // ✅ única desigualdad permitida
-    orderBy("archived"),           // 👈 requerido por Firestore
     orderBy("createdAt", "desc")
   );
 
@@ -54,11 +52,10 @@ export const getMetrics = async () => {
     const order = doc.data();
 
     /* =====================
-       ARCHIVED COUNT
+    ARCHIVED COUNT
     ===================== */
     if (order.archived === true) {
       archivedCount++;
-      return;
     }
 
     // 🛡️ defensive checks
@@ -67,11 +64,12 @@ export const getMetrics = async () => {
     const orderTotal = normalizeNumber(order.total);
     if (orderTotal <= 0) return;
 
+    // ✅ LOS ARCHIVADOS TAMBIÉN CUENTAN
     totalRevenue += orderTotal;
     totalOrders++;
 
     /* =====================
-       SALES BY DAY
+    SALES BY DAY
     ===================== */
 
     const dateKey = order.createdAt
@@ -83,7 +81,7 @@ export const getMetrics = async () => {
       (salesByDay[dateKey] || 0) + orderTotal;
 
     /* =====================
-       PRODUCTS
+      PRODUCTS
     ===================== */
 
     if (Array.isArray(order.items)) {
