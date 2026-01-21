@@ -1,5 +1,5 @@
 import "../../styles/AdminOrders.scss";
-import { useEffect, useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { getArchivedOrders } from "../../services/orders.service";
 
 const PAGE_SIZE = 10;
@@ -9,7 +9,10 @@ const AdminArchivedOrders = () => {
   const [lastDoc, setLastDoc] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  // filtro aplicado
   const [dateFilter, setDateFilter] = useState("");
+
+  // buffer del input
   const [dateDraft, setDateDraft] = useState("");
 
   const [hasFetched, setHasFetched] = useState(false);
@@ -37,15 +40,21 @@ const AdminArchivedOrders = () => {
     [dateFilter, lastDoc, loading]
   );
 
-  useEffect(() => {
+  const applyFilter = () => {
+    setOrders([]);
+    setLastDoc(null);
+    setHasFetched(false);
+    setDateFilter(dateDraft);
     fetchOrders({ reset: true });
-  }, [fetchOrders]);
+  };
 
   return (
     <section className="admin-archived-orders">
       <h2>Pedidos archivados</h2>
 
-      {/* FILTRO */}
+      {/* =====================
+          FILTRO MANUAL
+      ===================== */}
       <div className="archived-filters">
         <input
           type="date"
@@ -55,25 +64,36 @@ const AdminArchivedOrders = () => {
 
         <button
           className="btn btn--secondary"
-          onClick={() => setDateFilter(dateDraft)}
+          disabled={loading}
+          onClick={applyFilter}
         >
           Aplicar filtro
         </button>
       </div>
 
-      {/* EMPTY STATE ESTABLE */}
-      <p
-        className={`archived-empty ${hasFetched && !loading && orders.length === 0
-            ? "visible"
-            : ""
-          }`}
-      >
-        {dateFilter
-          ? "No hay pedidos archivados en este día"
-          : "No hay pedidos archivados"}
-      </p>
+      {/* =====================
+          LOADING ESTABLE
+      ===================== */}
+      {loading && (
+        <p className="admin-orders__loading">
+          Cargando pedidos archivados…
+        </p>
+      )}
 
+      {/* =====================
+          EMPTY STATE REAL
+      ===================== */}
+      {!loading && hasFetched && orders.length === 0 && (
+        <p className="archived-empty visible">
+          {dateFilter
+            ? "No hay pedidos archivados en este día"
+            : "No hay pedidos archivados"}
+        </p>
+      )}
 
+      {/* =====================
+          LISTA
+      ===================== */}
       {orders.map((order) => (
         <article key={order.id} className="order-card archived">
           <header className="order-card__header">
@@ -86,7 +106,9 @@ const AdminArchivedOrders = () => {
               <strong>Comprador:</strong>{" "}
               {order.customer?.name || "Sin nombre"}
             </p>
-            <p><strong>Total:</strong> ${order.total}</p>
+            <p>
+              <strong>Total:</strong> ${order.total}
+            </p>
             <p>
               <strong>Fecha:</strong>{" "}
               {order.createdAt?.toDate?.().toLocaleString() || "—"}
@@ -103,13 +125,15 @@ const AdminArchivedOrders = () => {
         </article>
       ))}
 
-      {lastDoc && (
+      {/* =====================
+          PAGINACIÓN
+      ===================== */}
+      {!loading && orders.length >= PAGE_SIZE && lastDoc && (
         <button
           className="btn btn--secondary"
-          disabled={loading}
           onClick={() => fetchOrders()}
         >
-          {loading ? "Cargando..." : "Cargar más"}
+          Cargar más
         </button>
       )}
     </section>

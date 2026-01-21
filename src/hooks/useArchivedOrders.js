@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useRef } from "react";
 import { getArchivedOrders } from "../services/orders.service";
 
 const PAGE_SIZE = 10;
@@ -37,17 +37,15 @@ export const useArchivedOrders = () => {
     [lastDoc, dateFilter]
   );
 
-  // ✅ EFECTO CORRECTO (ESLint es demasiado estricto acá)
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => {
-    fetchOrders({ reset: true });
-  }, [fetchOrders]);
+  const applyDateFilter = async (date) => {
+    if (loading) return;
 
-  const applyDateFilter = (date) => {
+    setDateFilter(date || null);
     setOrders([]);
     setLastDoc(null);
     setHasLoadedOnce(false);
-    setDateFilter(date || null);
+
+    await fetchOrders({ reset: true });
   };
 
   return {

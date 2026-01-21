@@ -66,6 +66,8 @@ const AdminDashboard = () => {
         </div>
       </div>
 
+
+
       {/* =====================
           ARCHIVADOS
       ===================== */}
@@ -83,6 +85,8 @@ const AdminDashboard = () => {
             ? "Ocultar ventas por día"
             : "Ver ventas por día"}
         </button>
+
+
 
         {showDailySales && (
           <button
