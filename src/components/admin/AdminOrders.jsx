@@ -23,9 +23,9 @@ const EMOJI = {
   truck: "\u{1F69A}",
   sparkles: "\u{2728}",
   hands: "\u{1F64C}",
-  iceCream: "\u{1F366}",     // 🍦
-  iceCreamCup: "\u{1F368}", // 🍨
-  shavedIce: "\u{1F367}",   // 🍧
+  iceCream: "\u{1F366}",
+  iceCreamCup: "\u{1F368}",
+  shavedIce: "\u{1F367}",
 };
 
 /* =====================
@@ -47,8 +47,6 @@ const sendWhatsAppMessage = (phone, message) => {
   if (!phone) return;
 
   const cleanPhone = phone.replace(/\D/g, "");
-
-  // ✅ UTF-8 correcto (emojis + acentos)
   const encodedMessage = encodeURIComponent(message);
 
   window.open(
@@ -56,7 +54,6 @@ const sendWhatsAppMessage = (phone, message) => {
     "_blank"
   );
 };
-
 
 const buildShippingMessage = (order, value) =>
   [
@@ -82,7 +79,6 @@ const buildInTransitMessage = (order) =>
     `¡Gracias ${order.customer?.name || ""} por elegir Helados Doncru! ${EMOJI.iceCream} ${EMOJI.hands}`,
   ].join("\n");
 
-
 /* =====================
   COMPONENT
 ===================== */
@@ -92,11 +88,15 @@ const AdminOrders = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
   const [fetchError, setFetchError] = useState(null);
+
   const orderEvents = useOrderEvents();
   const isSubscribedRef = useRef(false);
 
+  // 🔊 AUDIO (COMO ANTES)
+  const audioRef = useRef(null);
+  const previousCountRef = useRef(0);
+
   const loadWithFallback = useCallback(async (unsubscribeFn) => {
-    // fallback: try a plain getDocs read (no orderBy) to at least fetch data once
     try {
       const colRef = collection(db, "orders");
       const snap = await getDocs(colRef);
@@ -104,13 +104,12 @@ const AdminOrders = () => {
       setOrders(docs);
       setLoading(false);
       setFetchError(null);
-      // unsubscribe the failing onSnapshot (if provided)
+
       if (typeof unsubscribeFn === "function") {
         try {
           unsubscribeFn();
         } catch (e) {
-          console.log(e);
-
+          console.error(e);
         }
       }
     } catch (err) {
@@ -120,26 +119,42 @@ const AdminOrders = () => {
     }
   }, []);
 
+  /* =====================
+     FIRESTORE LISTENER
+  ===================== */
+
   useEffect(() => {
     if (isSubscribedRef.current) return;
     isSubscribedRef.current = true;
 
-    // Prefer simple collection streaming (no orderBy) to avoid issues
     const colRef = collection(db, "orders");
-    const q = colRef; // keep it plain; if you want ordering add checks/migration
+    const q = colRef;
 
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
-        setOrders(snapshot.docs.map((d) => ({ id: d.id, ...d.data() })));
+        const data = snapshot.docs.map((d) => ({
+          id: d.id,
+          ...d.data(),
+        }));
+
+        // 🔊 AUDIO NUEVO PEDIDO (IGUAL QUE ANTES)
+        if (
+          previousCountRef.current > 0 &&
+          data.length > previousCountRef.current
+        ) {
+          audioRef.current?.play().catch(() => {});
+        }
+
+        previousCountRef.current = data.length;
+
+        setOrders(data);
         setLoading(false);
         setFetchError(null);
       },
       (error) => {
-        // If onSnapshot errors (rules, invalid index, etc.) -> try fallback once
         console.error("onSnapshot error:", error);
         setFetchError(error?.message || "Error al suscribirse a pedidos");
-        // fallback to getDocs so the UI can at least show data
         loadWithFallback(unsubscribe);
       }
     );
@@ -148,20 +163,17 @@ const AdminOrders = () => {
       try {
         unsubscribe();
       } catch (e) {
-        {
-          console.error(e);
-        }
+        console.error(e);
       }
       isSubscribedRef.current = false;
     };
   }, [loadWithFallback]);
 
   /* =====================
-  ACTIONS
+     ACTIONS
   ===================== */
 
   const updateStatus = async (order, status) => {
-    const ref = db(db, "orders,id")
     try {
       await updateDoc(doc(db, "orders", order.id), { status });
 
@@ -173,15 +185,18 @@ const AdminOrders = () => {
       });
 
       if (status === "in_transit") {
-        sendWhatsAppMessage(order.customer?.phone, buildInTransitMessage(order));
+        sendWhatsAppMessage(
+          order.customer?.phone,
+          buildInTransitMessage(order)
+        );
       }
 
       if (status === "completed") {
-        await updateDoc(ref, {
+        await updateDoc(doc(db, "orders", order.id), {
           status: "completed",
           completedAt: serverTimestamp(),
           archivied: false,
-        })
+        });
       }
     } catch (error) {
       console.error("updateStatus error:", error);
@@ -202,7 +217,10 @@ const AdminOrders = () => {
         meta: { to: value },
       });
 
-      sendWhatsAppMessage(order.customer?.phone, buildShippingMessage(order, value));
+      sendWhatsAppMessage(
+        order.customer?.phone,
+        buildShippingMessage(order, value)
+      );
     } catch (error) {
       console.error("updateShipping error:", error);
     }
@@ -221,10 +239,13 @@ const AdminOrders = () => {
     }
   };
 
-  const filteredOrders = filter === "all" ? orders : orders.filter((o) => o.status === filter);
+  const filteredOrders =
+    filter === "all"
+      ? orders
+      : orders.filter((o) => o.status === filter);
 
   /* =====================
-    RENDER
+     RENDER
   ===================== */
 
   if (loading) {
@@ -233,11 +254,24 @@ const AdminOrders = () => {
 
   return (
     <main className="admin-orders">
+      {/* 🔊 AUDIO NUEVO PEDIDO (COMO ANTES) */}
+      <audio
+        ref={audioRef}
+        src="/sounds/new-order.wav"
+        preload="auto"
+      />
+
       <header className="admin-orders__header">
         <h2>Pedidos</h2>
 
-        <div className="admin-orders__controls" style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <select value={filter} onChange={(e) => setFilter(e.target.value)}>
+        <div
+          className="admin-orders__controls"
+          style={{ display: "flex", gap: 8, alignItems: "center" }}
+        >
+          <select
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+          >
             <option value="all">Todos</option>
             <option value="pending">Pendientes</option>
             <option value="in_transit">En camino</option>
@@ -254,13 +288,7 @@ const AdminOrders = () => {
                 onClick={() => {
                   setLoading(true);
                   setFetchError(null);
-                  // Forzar re-mount of effect by toggling isSubscribedRef (simple hack)
                   isSubscribedRef.current = false;
-                  // small timeout to ensure effect can re-run
-                  setTimeout(() => {
-                    setLoading(true);
-                    // no-op: effect will run because isSubscribedRef was set false
-                  }, 50);
                 }}
               >
                 Reintentar
@@ -285,10 +313,12 @@ const AdminOrders = () => {
                 <strong>Productos:</strong> ${order.total}
               </p>
               <p>
-                <strong>Envío estimado:</strong> {order.shipping?.estimated ?? "No informado"}
+                <strong>Envío estimado:</strong>{" "}
+                {order.shipping?.estimated ?? "No informado"}
               </p>
               <p>
-                <strong>Envío final:</strong> {order.shipping?.final ?? "Pendiente"}
+                <strong>Envío final:</strong>{" "}
+                {order.shipping?.final ?? "Pendiente"}
               </p>
               {order.customer?.name && (
                 <p>
@@ -298,7 +328,11 @@ const AdminOrders = () => {
               {order.customer?.phone && (
                 <p>
                   <strong>Teléfono:</strong>{" "}
-                  <a href={`https://wa.me/${order.customer.phone}`} target="_blank" rel="noreferrer">
+                  <a
+                    href={`https://wa.me/${order.customer.phone}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
                     {order.customer.phone}
                   </a>
                 </p>
@@ -309,7 +343,9 @@ const AdminOrders = () => {
               {order.items?.map((item, idx) => (
                 <li key={idx}>
                   {item.title} x{item.quantity}
-                  {item.gustos?.length ? ` (${item.gustos.join(", ")})` : ""}
+                  {item.gustos?.length
+                    ? ` (${item.gustos.join(", ")})`
+                    : ""}
                 </li>
               ))}
             </ul>
@@ -331,12 +367,17 @@ const AdminOrders = () => {
               <button
                 className="btn btn--primary"
                 disabled={!order.shipping?.final}
-                onClick={() => updateShipping(order, order.shipping.final)}
+                onClick={() =>
+                  updateShipping(order, order.shipping.final)
+                }
               >
                 Mandar costo de envío
               </button>
 
-              <button className="btn btn--secondary" onClick={() => updateStatus(order, "pending")}>
+              <button
+                className="btn btn--secondary"
+                onClick={() => updateStatus(order, "pending")}
+              >
                 Pendiente
               </button>
 
@@ -348,19 +389,39 @@ const AdminOrders = () => {
                 En camino 🚚
               </button>
 
-              <button className="btn btn--primary" onClick={() => updateStatus(order, "completed")}>
+              <button
+                className="btn btn--primary"
+                onClick={() => updateStatus(order, "completed")}
+              >
                 Completado
               </button>
 
-              <button className="btn btn--danger" onClick={() => updateStatus(order, "cancelled")}>
+              <button
+                className="btn btn--danger"
+                onClick={() => updateStatus(order, "cancelled")}
+              >
                 Cancelar
               </button>
 
-              <button className="btn" onClick={() => sendWhatsAppMessage(order.customer?.phone, buildShippingMessage(order, order.shipping?.final ?? 0))}>
+              <button
+                className="btn"
+                onClick={() =>
+                  sendWhatsAppMessage(
+                    order.customer?.phone,
+                    buildShippingMessage(
+                      order,
+                      order.shipping?.final ?? 0
+                    )
+                  )
+                }
+              >
                 WhatsApp
               </button>
 
-              <button className="order-delete-btn" onClick={() => deleteOrder(order.id)}>
+              <button
+                className="order-delete-btn"
+                onClick={() => deleteOrder(order.id)}
+              >
                 ✖
               </button>
             </footer>
