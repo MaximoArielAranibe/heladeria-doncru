@@ -244,17 +244,21 @@ const AdminOrders = () => {
     }
   };
 
-  const archiveOrder = async (orderId) => {
+  const archiveOrder = async (orderId, adminName = "Admin") => {
     try {
       await updateDoc(doc(db, "orders", orderId), {
         archived: true,
+        archivedAt: serverTimestamp(),
+        archivedBy: adminName,
       });
 
       await logOrderEvent({
         orderId,
         type: "ORDER_ARCHIVED",
+        meta: {
+          archivedBy: adminName,
+        },
       });
-
     } catch (error) {
       console.error("archiveOrder error:", error);
     }

@@ -8,6 +8,9 @@ import {
   orderBy,
   updateDoc,
   doc,
+  limit,
+  startAfter,
+  Timestamp,
 } from "firebase/firestore";
 import { db } from "../firebase/firebase";
 import { getOrCreateUserId } from "../utils/user.js";
@@ -76,20 +79,78 @@ export const getActiveOrders = async () => {
 
 /* =====================
    GET ARCHIVED ORDERS
+   (simple OR paginated)
 ===================== */
 
+export const getArchivedOrders = async (params = {}) => {
+  const {
+    pageSize,
+    lastDoc,
+    date,
+  } = params;
 
-export const getArchivedOrders = async () => {
-  const q = query(
+  /* =====================
+     MODO SIMPLE (compat)
+  ===================== */
+  if (!pageSize) {
+    const q = query(
+      collection(db, "orders"),
+      where("archived", "==", true),
+      orderBy("createdAt", "desc")
+    );
+
+    const snapshot = await getDocs(q);
+
+    return snapshot.docs.map((d) => ({
+      id: d.id,
+      ...d.data(),
+    }));
+  }
+
+  /* =====================
+     MODO PAGINADO + FILTRO
+  ===================== */
+
+  const constraints = [
     collection(db, "orders"),
     where("archived", "==", true),
-    orderBy("createdAt", "desc")
-  );
+    orderBy("createdAt", "desc"),
+    limit(pageSize),
+  ];
 
+  // 📅 filtro por día
+  if (date) {
+    const start = Timestamp.fromDate(
+      new Date(`${date}T00:00:00`)
+    );
+    const end = Timestamp.fromDate(
+      new Date(`${date}T23:59:59`)
+    );
+
+    constraints.splice(
+      1,
+      0,
+      where("createdAt", ">=", start),
+      where("createdAt", "<=", end)
+    );
+  }
+
+  // ⬇️ paginación
+  if (lastDoc) {
+    constraints.push(startAfter(lastDoc));
+  }
+
+  const q = query(...constraints);
   const snapshot = await getDocs(q);
 
-  return snapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  }));
+  return {
+    orders: snapshot.docs.map((d) => ({
+      id: d.id,
+      ...d.data(),
+    })),
+    lastDoc:
+      snapshot.docs.length > 0
+        ? snapshot.docs[snapshot.docs.length - 1]
+        : null,
+  };
 };

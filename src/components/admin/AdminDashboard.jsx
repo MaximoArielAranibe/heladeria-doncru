@@ -2,11 +2,13 @@ import { useEffect, useState, useMemo } from "react";
 import { getMetrics, getDaysOfMonth } from "../../services/metrics.service";
 import SalesBarChart from "./SalesBarChart";
 import "../../styles/AdminDashboard.scss";
+import AdminArchivedOrders from "./AdminArchiviedOrders";
 
 const AdminDashboard = () => {
   const [metrics, setMetrics] = useState(null);
   const [showDailySales, setShowDailySales] = useState(false);
   const [hideEmptyDays, setHideEmptyDays] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
 
   useEffect(() => {
     getMetrics().then(setMetrics);
@@ -50,20 +52,24 @@ const AdminDashboard = () => {
           <span>Pedidos</span>
           <strong>{metrics.totalOrders}</strong>
         </div>
+
+        <div
+          className="metric-card muted"
+          style={{ cursor: "pointer" }}
+          onClick={() => setShowArchived((prev) => !prev)}
+        >
+          <span>Pedidos archivados</span>
+          <strong>{metrics.archivedCount}</strong>
+          <small>
+            {showArchived ? "Ocultar" : "Ver detalle"}
+          </small>
+        </div>
       </div>
 
-      {/*       <div className="metric-card">
-        <Link to="/admin/orders/archived">
-          Pedidos archivados
-        </Link>
-
-      </div> */}
-
-      <div className="metric-card muted">
-        <span>Pedidos archivados</span>
-        <strong>{metrics.archivedCount}</strong>
-      </div>
-
+      {/* =====================
+          ARCHIVADOS
+      ===================== */}
+      {showArchived && <AdminArchivedOrders />}
 
       {/* =====================
           BOTONES
@@ -114,13 +120,6 @@ const AdminDashboard = () => {
           <SalesBarChart data={salesByDayComplete} />
         </>
       )}
-
-      {showDailySales && (
-        <>
-
-        </>
-      )}
-
     </section>
   );
 };

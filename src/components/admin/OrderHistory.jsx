@@ -1,13 +1,22 @@
 import { useState } from "react";
 import "../../styles/OrderHistory.scss";
 
+/* =====================
+   EVENT LABELS
+===================== */
+
 const EVENT_LABELS = {
   ORDER_CREATED: "Pedido creado",
   STATUS_CHANGED: "Estado actualizado",
   WHATSAPP_SENT: "WhatsApp enviado",
   ORDER_CANCELLED: "Pedido cancelado",
   ORDER_DELETED: "Pedido eliminado",
+  ORDER_ARCHIVED: "Pedido archivado",
 };
+
+/* =====================
+   STATUS LABELS
+===================== */
 
 const STATUS_LABELS = {
   pending: "Pendiente",
@@ -16,6 +25,9 @@ const STATUS_LABELS = {
   cancelled: "Cancelado",
 };
 
+/* =====================
+   COMPONENT
+===================== */
 
 const OrderHistory = ({ events = [] }) => {
   const [open, setOpen] = useState(false);
@@ -53,9 +65,8 @@ const OrderHistory = ({ events = [] }) => {
                     </span>
                   )}
 
-
                   <time>
-                    {e.timestamp?.toDate().toLocaleString()}
+                    {e.timestamp?.toDate?.().toLocaleString() || "—"}
                   </time>
                 </div>
               </li>
