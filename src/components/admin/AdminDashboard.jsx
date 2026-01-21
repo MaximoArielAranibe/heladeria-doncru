@@ -3,17 +3,21 @@ import { getMetrics, getDaysOfMonth } from "../../services/metrics.service";
 import SalesBarChart from "./SalesBarChart";
 import "../../styles/AdminDashboard.scss";
 import AdminArchivedOrders from "./AdminArchiviedOrders";
+import { useUserRole } from "../../hooks/useUserRole";
 
-const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_DASHBOARD_PASSWORD;
+const ADMIN_PASSWORD =
+  import.meta.env.VITE_ADMIN_DASHBOARD_PASSWORD;
 
 const AdminDashboard = () => {
+  const { role, loading: roleLoading } = useUserRole();
+
   const [metrics, setMetrics] = useState(null);
+
   const [showDailySales, setShowDailySales] = useState(false);
   const [hideEmptyDays, setHideEmptyDays] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
 
-  // 🔐 control de ventas totales
-  const [canSeeTotalRevenue, setCanSeeTotalRevenue] = useState(false);
+  const [canSeeRevenue, setCanSeeRevenue] = useState(false);
 
   /* =====================
      FETCH METRICS
@@ -23,18 +27,18 @@ const AdminDashboard = () => {
   }, []);
 
   /* =====================
-     SALES BY DAY (MES)
+     SALES BY DAY (MONTH)
   ===================== */
   const salesByDayComplete = useMemo(() => {
     if (!metrics) return [];
 
     const today = new Date();
-    const daysOfMonth = getDaysOfMonth(
+    const days = getDaysOfMonth(
       today.getFullYear(),
       today.getMonth()
     );
 
-    return daysOfMonth.map((day) => ({
+    return days.map((day) => ({
       day,
       total: metrics.salesByDay[day] || 0,
     }));
@@ -57,16 +61,20 @@ const AdminDashboard = () => {
      PASSWORD HANDLER
   ===================== */
   const requestPassword = () => {
-    const input = prompt("Ingresá la contraseña para ver las ventas totales");
+    const input = prompt("Ingresá la contraseña");
 
     if (input === ADMIN_PASSWORD) {
-      setCanSeeTotalRevenue(true);
-    } else {
+      setCanSeeRevenue(true);
+    } else if (input !== null) {
       alert("Contraseña incorrecta");
     }
   };
 
-  if (!metrics) return <p>Cargando métricas...</p>;
+  if (!metrics || roleLoading) {
+    return <p>Cargando dashboard…</p>;
+  }
+
+  const isAdmin = role === "admin";
 
   return (
     <section className="admin-dashboard">
@@ -76,24 +84,26 @@ const AdminDashboard = () => {
           MÉTRICAS
       ===================== */}
       <div className="dashboard-grid">
-        {/* 🔐 VENTAS TOTALES PROTEGIDAS */}
-        <div
-          className="metric-card"
-          style={{ cursor: "pointer" }}
-          onClick={!canSeeTotalRevenue ? requestPassword : undefined}
-        >
-          <span>Ventas totales</span>
-          <strong>
-            {canSeeTotalRevenue ? (
-              `$${metrics.totalRevenue}`
-            ) : (
-              "••••••"
+        {/* 🔐 SOLO ADMIN */}
+        {isAdmin && (
+          <div
+            className="metric-card"
+            style={{ cursor: "pointer" }}
+            onClick={
+              !canSeeRevenue ? requestPassword : undefined
+            }
+          >
+            <span>Ventas totales</span>
+            <strong>
+              {canSeeRevenue
+                ? `$${metrics.totalRevenue}`
+                : "••••••"}
+            </strong>
+            {!canSeeRevenue && (
+              <small>Tocar para desbloquear</small>
             )}
-          </strong>
-          {!canSeeTotalRevenue && (
-            <small>Tocar para desbloquear</small>
-          )}
-        </div>
+          </div>
+        )}
 
         <div className="metric-card highlight">
           <span>Ventas de hoy</span>
@@ -108,7 +118,7 @@ const AdminDashboard = () => {
         <div
           className="metric-card muted"
           style={{ cursor: "pointer" }}
-          onClick={() => setShowArchived((prev) => !prev)}
+          onClick={() => setShowArchived((v) => !v)}
         >
           <span>Pedidos archivados</span>
           <strong>{metrics.archivedCount}</strong>
@@ -124,26 +134,36 @@ const AdminDashboard = () => {
       {showArchived && <AdminArchivedOrders />}
 
       {/* =====================
-          BOTONES
+          ACCIONES
       ===================== */}
       <div className="dashboard-actions">
-        <button
-          className="toggle-sales-btn"
-          onClick={() => setShowDailySales((prev) => !prev)}
-        >
-          {showDailySales
-            ? "Ocultar ventas por día"
-            : "Ver ventas por día"}
-        </button>
+        {isAdmin && (
+          <button
+            className="toggle-sales-btn"
+            onClick={() => {
+              if (!canSeeRevenue) {
+                requestPassword();
+                return;
+              }
+              setShowDailySales((v) => !v);
+            }}
+          >
+            {showDailySales
+              ? "Ocultar ventas por día"
+              : "Ver ventas por día"}
+          </button>
+        )}
 
-        {showDailySales && (
+        {isAdmin && showDailySales && canSeeRevenue && (
           <button
             className="toggle-sales-btn secondary"
-            onClick={() => setHideEmptyDays((prev) => !prev)}
+            onClick={() =>
+              setHideEmptyDays((v) => !v)
+            }
           >
             {hideEmptyDays
-              ? "Mostrar días sin ventas"
-              : "Ocultar días sin ventas"}
+              ? "Mostrar ventas"
+              : "Ocultar dias"}
           </button>
         )}
       </div>
@@ -151,21 +171,25 @@ const AdminDashboard = () => {
       {/* =====================
           VENTAS POR DÍA
       ===================== */}
-      {showDailySales && (
+      {isAdmin && showDailySales && canSeeRevenue && (
         <>
           <h3>Ventas del mes</h3>
 
           {!hideEmptyDays && (
             <ul className="sales-by-day">
-              {salesByDayComplete.map(({ day, total }) => (
-                <li
-                  key={day}
-                  className={total > 0 ? "has-sales" : ""}
-                >
-                  <span>{day}</span>
-                  <strong>${total}</strong>
-                </li>
-              ))}
+              {salesByDayComplete.map(
+                ({ day, total }) => (
+                  <li
+                    key={day}
+                    className={
+                      total > 0 ? "has-sales" : ""
+                    }
+                  >
+                    <span>{day}</span>
+                    <strong>${total}</strong>
+                  </li>
+                )
+              )}
             </ul>
           )}
 
