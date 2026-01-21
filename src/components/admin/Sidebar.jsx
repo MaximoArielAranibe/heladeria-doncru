@@ -10,20 +10,23 @@ const Sidebar = () => {
         <NavLink
           to="/admin"
           end
-          className={({ isActive }) =>
-            isActive ? "active" : ""
-          }
+          className={({ isActive }) => (isActive ? "active" : "")}
         >
           📊 Dashboard
         </NavLink>
 
         <NavLink
           to="/admin/pedidos"
-          className={({ isActive }) =>
-            isActive ? "active" : ""
-          }
+          className={({ isActive }) => (isActive ? "active" : "")}
         >
           🧾 Pedidos
+        </NavLink>
+
+        <NavLink
+          to="/admin/stock"
+          className={({ isActive }) => (isActive ? "active" : "")}
+        >
+          📦 Stock
         </NavLink>
       </nav>
     </aside>

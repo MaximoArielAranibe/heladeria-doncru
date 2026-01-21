@@ -1,0 +1,108 @@
+.admin-stock {
+  padding: 1rem;
+
+  h2 {
+    margin-bottom: 1rem;
+  }
+}
+
+.admin-stock__list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.admin-stock__item {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 16px;
+
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+
+  &.ok {
+    border-left: 6px solid #22c55e;
+  }
+
+  &.warning {
+    border-left: 6px solid #facc15;
+  }
+
+  &.danger {
+    border-left: 6px solid #ef4444;
+    background: #fff5f5;
+  }
+
+  input {
+    width: 90px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    text-align: right;
+  }
+}
+
+.admin-stock__info {
+  display: flex;
+  flex-direction: column;
+
+  .category {
+    font-size: 12px;
+    color: #6b7280;
+  }
+}
+
+.admin-stock__weight {
+  font-weight: 600;
+}
+
+.admin-stock__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-edit,
+.btn-save,
+.btn-cancel {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.btn-save {
+  color: #16a34a;
+}
+
+.btn-cancel {
+  color: #dc2626;
+}
+.admin-stock__filters {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+
+  input,
+  select {
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid #d1d5db;
+    font-size: 14px;
+  }
+
+  input {
+    flex: 1;
+    min-width: 180px;
+  }
+}
+
+.admin-stock__empty {
+  text-align: center;
+  font-size: 14px;
+  color: #6b7280;
+}

@@ -20,9 +20,9 @@ import AdminLayout from "./components/admin/AdminLayout.jsx";
 import AdminDashboard from "./components/admin/AdminDashboard.jsx";
 import Orders from "./components/admin/Orders.jsx";
 import AdminArchivedOrders from "./components/admin/AdminArchiviedOrders.jsx";
+import AdminStock from "./components/admin/AdminStock.jsx";
 
 function App() {
-
   return (
     <CartProvider>
       <AuthProvider>
@@ -32,6 +32,7 @@ function App() {
           <WhatsAppButton />
 
           <Routes>
+            {/* ===================== PUBLIC ===================== */}
             <Route path="/" element={<Home />} />
             <Route path="/gustos" element={<Gustos />} />
             <Route path="/gustos/:categoria" element={<Gustos />} />
@@ -39,6 +40,7 @@ function App() {
             <Route path="/carrito" element={<Carrito />} />
             <Route path="/admin/login" element={<AdminLogin />} />
 
+            {/* ===================== ADMIN ===================== */}
             <Route
               path="/admin"
               element={
@@ -47,15 +49,20 @@ function App() {
                 </ProtectedRoute>
               }
             >
+              {/* dashboard */}
               <Route index element={<AdminDashboard />} />
+
+              {/* pedidos activos */}
               <Route path="pedidos" element={<Orders />} />
+
+              {/* pedidos archivados */}
               <Route
-                path="/admin/orders/archived"
-                element={<ProtectedRoute>
-                  <AdminArchivedOrders />
-                </ProtectedRoute>}
+                path="orders/archived"
+                element={<AdminArchivedOrders />}
               />
 
+              {/* stock */}
+              <Route path="stock" element={<AdminStock />} />
             </Route>
           </Routes>
 
