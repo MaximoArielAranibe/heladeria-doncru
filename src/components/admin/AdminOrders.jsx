@@ -55,7 +55,7 @@ const deleteOrder = async (orderId) => {
   }
 };
 
-const handleArchive = async (order) => {
+const _handleArchive = async (order) => {
   try {
     await archiveOrderWithStock(order);
     toast.success("Pedido archivado y stock descontado 🍦");
@@ -255,9 +255,19 @@ const AdminOrders = () => {
       console.error("updateShipping error:", error);
     }
   };
-
   const archiveOrder = async (orderId, adminName = "Admin") => {
     try {
+      // 🔥 NUEVO: buscar el pedido actual
+      const order = orders.find((o) => o.id === orderId);
+
+      if (!order) {
+        throw new Error("Pedido no encontrado");
+      }
+
+      // 🔥 NUEVO: descontar stock + validar
+      await archiveOrderWithStock(order);
+
+      // ✅ TU LÓGICA ORIGINAL (INTACTA)
       await updateDoc(doc(db, "orders", orderId), {
         archived: true,
         archivedAt: serverTimestamp(),
@@ -271,10 +281,14 @@ const AdminOrders = () => {
           archivedBy: adminName,
         },
       });
+
+      toast.success("Pedido archivado y stock descontado 🍦");
     } catch (error) {
       console.error("archiveOrder error:", error);
+      toast.error(error.message || "Error al archivar pedido");
     }
   };
+
 
   const filteredOrders =
     (filter === "all"

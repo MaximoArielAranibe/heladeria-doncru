@@ -11,7 +11,7 @@ import {
   limit,
   startAfter,
   Timestamp,
-  runTransaction
+  runTransaction,
 } from "firebase/firestore";
 import { db } from "../firebase/firebase";
 import { getOrCreateUserId } from "../utils/user.js";
@@ -50,7 +50,7 @@ export const createOrder = async ({ cart, total, customer, shipping }) => {
 };
 
 /* =====================
-   ARCHIVE ORDER
+   ARCHIVE ORDER (simple)
 ===================== */
 
 export const archiveOrder = async (orderId) => {
@@ -80,7 +80,6 @@ export const getActiveOrders = async () => {
 
 /* =====================
    GET ARCHIVED ORDERS
-   (simple OR paginated)
 ===================== */
 
 export const getArchivedOrders = async ({
@@ -88,9 +87,6 @@ export const getArchivedOrders = async ({
   lastDoc,
   date,
 } = {}) => {
-  /* =====================
-     SIMPLE MODE (legacy)
-  ===================== */
   if (!pageSize) {
     const q = query(
       collection(db, "orders"),
@@ -106,16 +102,11 @@ export const getArchivedOrders = async ({
     }));
   }
 
-  /* =====================
-     PAGINATED MODE
-  ===================== */
-
   const baseConstraints = [
     collection(db, "orders"),
     where("archived", "==", true),
   ];
 
-  // 📅 filtro por día
   if (date) {
     const start = Timestamp.fromDate(
       new Date(`${date}T00:00:00`)
@@ -154,6 +145,34 @@ export const getArchivedOrders = async ({
   };
 };
 
+/* =====================
+   WEIGHT PARSER (ROBUSTO)
+===================== */
+
+const getWeightFromTitle = (title = "") => {
+  const t = title.toLowerCase().replace(/\s+/g, " ");
+
+  // fracciones explícitas
+  if (t.includes("1/4")) return 250;
+  if (t.includes("3/4")) return 750;
+
+  // medio kilo
+  if (t.includes("medio")) return 500;
+  if (t.includes("1/2")) return 500;
+
+  // 1 kg explícito
+  if (t.includes("1 kg") || t.includes("1kg")) return 1000;
+
+  // kg sin número → asumir 1kg
+  if (t.includes("kg")) return 1000;
+
+  return null;
+};
+
+/* =====================
+   ARCHIVE ORDER + STOCK
+===================== */
+
 export const archiveOrderWithStock = async (order) => {
   const orderRef = doc(db, "orders", order.id);
 
@@ -166,61 +185,52 @@ export const archiveOrderWithStock = async (order) => {
 
     const orderData = orderSnap.data();
 
-    // 🛑 ya archivado
-    if (orderData.archived === true) {
-      return;
+    if (orderData.archived === true) return;
+
+    if (!Array.isArray(orderData.items) || orderData.items.length === 0) {
+      throw new Error("Pedido sin items");
     }
 
-    const { productWeight, gustos } = orderData;
+    for (const item of orderData.items) {
+      const totalWeight = getWeightFromTitle(item.title);
 
-    if (!productWeight || !Array.isArray(gustos)) {
-      throw new Error("Pedido mal formado");
-    }
-
-    const weightPerGusto =
-      productWeight / gustos.length;
-
-    // 1️⃣ VALIDAR STOCK
-    for (const gusto of gustos) {
-      const gustoRef = doc(db, "gustos", gusto.id);
-      const gustoSnap = await transaction.get(gustoRef);
-
-      if (!gustoSnap.exists()) {
-        throw new Error(
-          `Gusto ${gusto.name} no existe`
-        );
+      if (!totalWeight) {
+        throw new Error(`Peso desconocido para ${item.title}`);
       }
 
-      const currentWeight = gustoSnap.data().weight;
+      if (!Array.isArray(item.gustos) || item.gustos.length === 0) continue;
 
-      if (currentWeight < weightPerGusto) {
-        throw new Error(
-          `Stock insuficiente para ${gustoSnap.data().name}`
+      const weightPerGusto = totalWeight / item.gustos.length;
+
+      for (const gustoName of item.gustos) {
+        const q = query(
+          collection(db, "gustos"),
+          where("name", "==", gustoName)
         );
+
+        const snap = await getDocs(q);
+
+        if (snap.empty) {
+          throw new Error(`Gusto "${gustoName}" no existe`);
+        }
+
+        const gustoDoc = snap.docs[0];
+        const gustoRef = doc(db, "gustos", gustoDoc.id);
+
+        const currentWeight = gustoDoc.data().weight ?? 0;
+
+        if (currentWeight < weightPerGusto) {
+          throw new Error(
+            `Stock insuficiente para ${gustoDoc.data().name}`
+          );
+        }
+
+        transaction.update(gustoRef, {
+          weight: currentWeight - weightPerGusto,
+        });
       }
     }
 
-    // 2️⃣ DESCONTAR STOCK
-    for (const gusto of gustos) {
-      const gustoRef = doc(db, "gustos", gusto.id);
-
-      transaction.update(gustoRef, {
-        weight:
-          doc(db, "gustos", gusto.id) &&
-          Number(
-            -weightPerGusto
-          ),
-      });
-
-      transaction.update(gustoRef, {
-        weight: (
-          (await transaction.get(gustoRef)).data()
-            .weight - weightPerGusto
-        ),
-      });
-    }
-
-    // 3️⃣ ARCHIVAR PEDIDO
     transaction.update(orderRef, {
       archived: true,
       archivedAt: serverTimestamp(),
