@@ -1,28 +1,20 @@
-module.exports = {
+export default {
   env: {
-    es6: true,
+    es2021: true,
     node: true,
   },
   parserOptions: {
-    "ecmaVersion": 2018,
+    ecmaVersion: 2021,
+    sourceType: "module",
   },
   extends: [
     "eslint:recommended",
     "google",
   ],
   rules: {
-    "no-restricted-globals": ["error", "name", "length"],
-    "prefer-arrow-callback": "error",
-    "quotes": ["error", "double", {"allowTemplateLiterals": true}],
+    "no-undef": "off", // 🔥 necesario para Firebase
+    "quotes": ["error", "double", { "allowTemplateLiterals": true }],
+    "require-jsdoc": "off",
+    "object-curly-spacing": ["error", "always"],
   },
-  overrides: [
-    {
-      files: ["**/*.spec.*"],
-      env: {
-        mocha: true,
-      },
-      rules: {},
-    },
-  ],
-  globals: {},
 };

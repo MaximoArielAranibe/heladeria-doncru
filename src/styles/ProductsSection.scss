@@ -210,3 +210,24 @@ ADMIN INLINE EDIT
   align-items: center;
   gap: 8px;
 }
+
+.gusto-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.gusto-stock {
+  font-size: 13px;
+  font-weight: 600;
+  color: #16a34a;
+}
+
+.gusto-stock.warning {
+  color: #f59e0b;
+}
+
+.gusto-stock.danger {
+  color: #dc2626;
+}

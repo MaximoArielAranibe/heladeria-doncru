@@ -13,6 +13,8 @@ import { logOrderEvent } from "../helper/logOrderEvent.jsx";
 import OrderHistory from "./OrderHistory";
 import { useOrderEvents } from "../../hooks/useOrderEvents.js";
 import { deleteDoc } from "firebase/firestore";
+import { archiveOrderWithStock } from "../../services/orders.service.js";
+import toast from "react-hot-toast/headless";
 
 /* =====================
   EMOJIS (UNICODE SAFE)
@@ -53,6 +55,14 @@ const deleteOrder = async (orderId) => {
   }
 };
 
+const handleArchive = async (order) => {
+  try {
+    await archiveOrderWithStock(order);
+    toast.success("Pedido archivado y stock descontado 🍦");
+  } catch (error) {
+    toast.error(error.message);
+  }
+};
 
 /* =====================
   WHATSAPP HELPERS
@@ -97,6 +107,8 @@ const buildInTransitMessage = (order) =>
 /* =====================
   COMPONENT
 ===================== */
+
+
 
 const AdminOrders = () => {
   const [orders, setOrders] = useState([]);

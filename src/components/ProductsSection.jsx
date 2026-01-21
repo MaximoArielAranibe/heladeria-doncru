@@ -21,7 +21,10 @@ const ProductsSection = ({ category = "todos", title }) => {
 
       <div className="products__list">
         {filteredProducts.map((product) => (
-          <CardVertical key={product.id} product={product} />
+          <CardVertical
+            key={product.id}
+            product={product}
+          />
         ))}
       </div>
     </section>

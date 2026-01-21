@@ -48,8 +48,8 @@ const GustosSection = ({ category = "todos", title }) => {
   const [creating, setCreating] = useState(false);
   const [newGusto, setNewGusto] = useState({
     name: "",
+    weight: "",
     category: "",
-    newCategory: "",
   });
 
   /* =====================
@@ -73,8 +73,8 @@ const GustosSection = ({ category = "todos", title }) => {
     return activeCategory === "todos"
       ? safeGustos
       : safeGustos.filter(
-          (g) => g.category === activeCategory
-        );
+        (g) => g.category === activeCategory
+      );
   }, [safeGustos, activeCategory]);
 
   /* =====================
@@ -122,7 +122,7 @@ const GustosSection = ({ category = "todos", title }) => {
   /* =====================
      CREATE
   ===================== */
-  const handleCreate = async () => {
+  /* const handleCreate = async () => {
     if (!newGusto.name.trim()) {
       toast.error("El nombre no puede estar vacío");
       return;
@@ -141,11 +141,59 @@ const GustosSection = ({ category = "todos", title }) => {
     try {
       await createGusto({
         name: newGusto.name.trim(),
+        weight: newGusto.weight,
         category: finalCategory,
       });
 
       toast.success("Gusto creado 🍨");
       setNewGusto({ name: "", category: "", newCategory: "" });
+      setCreating(false);
+    } catch (error) {
+      toast.error("Error al crear gusto");
+      console.error(error);
+    }
+  }; */
+
+  const handleCreate = async () => {
+    // 🧪 VALIDACIONES
+    if (!newGusto.name.trim()) {
+      toast.error("El nombre no puede estar vacío");
+      return;
+    }
+
+    if (!newGusto.weight || Number(newGusto.weight) <= 0) {
+      toast.error("El stock inicial debe ser mayor a 0");
+      return;
+    }
+
+    const finalCategory =
+      newGusto.category === "__new__"
+        ? slugify(newGusto.newCategory)
+        : newGusto.category;
+
+    if (!finalCategory) {
+      toast.error("Completá la categoría");
+      return;
+    }
+
+    try {
+      await createGusto({
+        name: newGusto.name.trim(),
+        category: finalCategory,
+        weight: Number(newGusto.weight), // 🔥 CLAVE
+        active: true,
+        createdAt: new Date(),
+      });
+
+      toast.success("Gusto creado 🍨");
+
+      setNewGusto({
+        name: "",
+        weight: "",
+        category: "",
+        newCategory: "",
+      });
+
       setCreating(false);
     } catch (error) {
       toast.error("Error al crear gusto");
@@ -205,6 +253,20 @@ const GustosSection = ({ category = "todos", title }) => {
                   })
                 }
               />
+              <input
+                type="number"
+                name="weight"
+                placeholder="Stock inicial (gramos)"
+                value={newGusto.weight}
+                onChange={(e) =>
+                  setNewGusto({
+                    ...newGusto,
+                    weight: e.target.value,
+                  })
+                }
+
+              />
+
 
               <select
                 value={newGusto.category}
@@ -223,7 +285,7 @@ const GustosSection = ({ category = "todos", title }) => {
                   </option>
                 ))}
 
-               {/*  <option value="__new__">
+                {/*  <option value="__new__">
                   ➕ Nueva categoría
                 </option> */} {/* Posible feature nueva categoria */}
               </select>
@@ -268,9 +330,8 @@ const GustosSection = ({ category = "todos", title }) => {
         {categories.map((cat) => (
           <button
             key={cat}
-            className={`filter-btn ${
-              activeCategory === cat ? "is-active" : ""
-            }`}
+            className={`filter-btn ${activeCategory === cat ? "is-active" : ""
+              }`}
             onClick={() => setActiveCategory(cat)}
           >
             {formatCategory(cat)}
@@ -342,7 +403,23 @@ const GustosSection = ({ category = "todos", title }) => {
               </div>
             ) : (
               <>
-                <span>{gusto.name}</span>
+                <div className="gusto-info">
+                  <span className="gusto-name">{gusto.name}</span>
+
+                  {isAdmin && (
+                    <span
+                      className={`gusto-stock ${gusto.weight < 1000
+                          ? "danger"
+                          : gusto.weight < 3000
+                            ? "warning"
+                            : ""
+                        }`}
+                    >
+                      {(gusto.weight / 1000).toFixed(2)} kg
+                    </span>
+                  )}
+                </div>
+
 
                 {isAdmin && (
                   <div className="gusto-actions">

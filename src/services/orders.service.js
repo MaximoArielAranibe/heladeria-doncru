@@ -11,6 +11,7 @@ import {
   limit,
   startAfter,
   Timestamp,
+  runTransaction
 } from "firebase/firestore";
 import { db } from "../firebase/firebase";
 import { getOrCreateUserId } from "../utils/user.js";
@@ -151,4 +152,78 @@ export const getArchivedOrders = async ({
         ? snapshot.docs[snapshot.docs.length - 1]
         : null,
   };
+};
+
+export const archiveOrderWithStock = async (order) => {
+  const orderRef = doc(db, "orders", order.id);
+
+  await runTransaction(db, async (transaction) => {
+    const orderSnap = await transaction.get(orderRef);
+
+    if (!orderSnap.exists()) {
+      throw new Error("Pedido no existe");
+    }
+
+    const orderData = orderSnap.data();
+
+    // 🛑 ya archivado
+    if (orderData.archived === true) {
+      return;
+    }
+
+    const { productWeight, gustos } = orderData;
+
+    if (!productWeight || !Array.isArray(gustos)) {
+      throw new Error("Pedido mal formado");
+    }
+
+    const weightPerGusto =
+      productWeight / gustos.length;
+
+    // 1️⃣ VALIDAR STOCK
+    for (const gusto of gustos) {
+      const gustoRef = doc(db, "gustos", gusto.id);
+      const gustoSnap = await transaction.get(gustoRef);
+
+      if (!gustoSnap.exists()) {
+        throw new Error(
+          `Gusto ${gusto.name} no existe`
+        );
+      }
+
+      const currentWeight = gustoSnap.data().weight;
+
+      if (currentWeight < weightPerGusto) {
+        throw new Error(
+          `Stock insuficiente para ${gustoSnap.data().name}`
+        );
+      }
+    }
+
+    // 2️⃣ DESCONTAR STOCK
+    for (const gusto of gustos) {
+      const gustoRef = doc(db, "gustos", gusto.id);
+
+      transaction.update(gustoRef, {
+        weight:
+          doc(db, "gustos", gusto.id) &&
+          Number(
+            -weightPerGusto
+          ),
+      });
+
+      transaction.update(gustoRef, {
+        weight: (
+          (await transaction.get(gustoRef)).data()
+            .weight - weightPerGusto
+        ),
+      });
+    }
+
+    // 3️⃣ ARCHIVAR PEDIDO
+    transaction.update(orderRef, {
+      archived: true,
+      archivedAt: serverTimestamp(),
+    });
+  });
 };
