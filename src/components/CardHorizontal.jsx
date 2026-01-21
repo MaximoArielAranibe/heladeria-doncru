@@ -5,7 +5,7 @@ import Button from "./Button";
 import StarBadge from "./StarBadge";
 import SelectGustosModal from "./SelectGustosModal";
 import { useAuth } from "../hooks/useAuth";
-import { updateProductPrice } from "../services/products.service";
+import { updateProductPrice, deleteProduct } from "../services/products.service";
 import toast from "react-hot-toast";
 
 const CardHorizontal = ({
@@ -23,6 +23,7 @@ const CardHorizontal = ({
   const [editingPrice, setEditingPrice] = useState(false);
   const [localPrice, setLocalPrice] = useState(price);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false); // 🗑️
 
   const imageSrc = thumbnail && thumbnail !== "" ? thumbnail : foto;
 
@@ -42,6 +43,28 @@ const CardHorizontal = ({
     }
   };
 
+  // 🗑️ ELIMINAR PRODUCTO
+  const handleDelete = async () => {
+    if (!product?.id) return;
+
+    const confirmed = window.confirm(
+      `¿Eliminar "${title}"?\nEsta acción no se puede deshacer.`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setDeleting(true);
+      await deleteProduct(product.id);
+      toast.success("Producto eliminado 🗑️");
+    } catch (err) {
+      console.error(err);
+      toast.error("Error al eliminar producto");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <>
       <div
@@ -58,9 +81,8 @@ const CardHorizontal = ({
         {/* 🔧 ADMIN PRICE EDIT */}
         {isAdmin && editingPrice && (
           <div
-            className={`card__price-edit ${
-              imageRight ? "card__price-edit--right" : ""
-            }`}
+            className={`card__price-edit ${imageRight ? "card__price-edit--right" : ""
+              }`}
           >
             <input
               type="number"
@@ -98,13 +120,25 @@ const CardHorizontal = ({
             </p>
           )}
 
+          {/* 🔧 ADMIN ACTIONS */}
           {isAdmin && !editingPrice && (
-            <button
-              className="card__edit-price-btn"
-              onClick={() => setEditingPrice(true)}
-            >
-              ✏️ Editar precio
-            </button>
+            <>
+              <button
+                className="card__edit-price-btn"
+                onClick={() => setEditingPrice(true)}
+              >
+                ✏️ Editar precio
+              </button>
+
+              <button
+                className="card__delete-icon"
+                onClick={handleDelete}
+                disabled={deleting}
+                title="Eliminar producto"
+              >
+                🗑️
+              </button>
+            </>
           )}
 
           <p className="card__texts__p">¿Te lo pensás perder?</p>

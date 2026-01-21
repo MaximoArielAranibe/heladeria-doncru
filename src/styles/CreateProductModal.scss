@@ -1,0 +1,127 @@
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  height: 100%;
+}
+
+.modal {
+  background: #fff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 420px;
+  padding: 16px;
+  min-height: max-content;
+}
+
+.modal__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  h3 {
+    margin: 0;
+  }
+
+  button {
+    background: none;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+  }
+}
+
+.modal__form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+
+  input,
+  textarea {
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    font-size: 14px;
+  }
+
+  textarea {
+    resize: none;
+    min-height: 80px;
+  }
+}
+
+.modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.modal__error {
+  color: #ef4444;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.image-drop {
+  border: 2px dashed #e5e7eb;
+  border-radius: 14px;
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+  background: #fafafa;
+  overflow: hidden;
+  position: relative;
+
+  &:hover {
+    border-color: #ec4899;
+    background: #fdf2f8;
+  }
+
+  label {
+    font-weight: 600;
+    font-size: 13px;
+    color: #374151;
+    cursor: pointer;
+  }
+}
+
+.image-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+
+  img {
+    max-width: 90px;
+    max-height: 90px;
+    object-fit: cover;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  }
+}
+
+.change-image-btn {
+  background: #ec4899;
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: #db2777;
+  }
+}

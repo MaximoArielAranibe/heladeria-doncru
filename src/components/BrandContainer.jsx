@@ -3,9 +3,9 @@ import '../styles/BrandContainer.scss'
 
 const BrandContainer = () => {
   return (
-    <div className='brand'>
+    <section className='brand'>
       <img src={brandImg} alt="" className="brand__img" />
-    </div>
+    </section>
   )
 }
 

@@ -1,11 +1,11 @@
 .cards__container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  gap: 2rem;
-  margin: 2rem 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  justify-items: center;
+  row-gap: 3rem;
+  margin: 2.5rem auto;
 }
+
 
 /* Estado loading */
 .cards__container--loading {
@@ -42,14 +42,14 @@
 /* 💻 Desktop */
 @media (min-width: 1024px) {
   .cards__container {
-    flex-direction: row;
-    align-items: stretch;
-    gap: 2.5rem;
-    margin: 5rem 0;
+    grid-template-columns: repeat(2, 1fr);
+
+    /* 👇 CLAVES */
+    max-width: 780px; // 🔑 achica el contenedor
+    column-gap: 2rem; // 🔑 separación horizontal real
+    row-gap: 3rem;
+
+    margin: 5rem auto;
   }
 
-  .cards__container > * {
-    flex: 1;
-    max-width: 360px;
-  }
 }
