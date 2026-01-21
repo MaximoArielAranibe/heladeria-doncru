@@ -3,7 +3,6 @@ import {
   collection,
   onSnapshot,
   updateDoc,
-  deleteDoc,
   doc,
   getDocs,
   serverTimestamp,
@@ -13,6 +12,7 @@ import "../../styles/AdminOrders.scss";
 import { logOrderEvent } from "../helper/logOrderEvent.jsx";
 import OrderHistory from "./OrderHistory";
 import { useOrderEvents } from "../../hooks/useOrderEvents.js";
+import { deleteDoc } from "firebase/firestore";
 
 /* =====================
   EMOJIS (UNICODE SAFE)
@@ -38,6 +38,21 @@ const STATUS_LABELS = {
   completed: "Completado",
   cancelled: "Cancelado",
 };
+
+
+const deleteOrder = async (orderId) => {
+  try {
+    await deleteDoc(doc(db, "orders", orderId));
+
+    await logOrderEvent({
+      orderId,
+      type: "ORDER_DELETED",
+    });
+  } catch (error) {
+    console.error("deleteOrder error:", error);
+  }
+};
+
 
 /* =====================
   WHATSAPP HELPERS
@@ -119,6 +134,8 @@ const AdminOrders = () => {
     }
   }, []);
 
+
+
   /* =====================
      FIRESTORE LISTENER
   ===================== */
@@ -143,7 +160,7 @@ const AdminOrders = () => {
           previousCountRef.current > 0 &&
           data.length > previousCountRef.current
         ) {
-          audioRef.current?.play().catch(() => {});
+          audioRef.current?.play().catch(() => { });
         }
 
         previousCountRef.current = data.length;
@@ -195,7 +212,8 @@ const AdminOrders = () => {
         await updateDoc(doc(db, "orders", order.id), {
           status: "completed",
           completedAt: serverTimestamp(),
-          archivied: false,
+          createdAt: serverTimestamp(),
+          archived: false,
         });
       }
     } catch (error) {
@@ -226,23 +244,28 @@ const AdminOrders = () => {
     }
   };
 
-  const deleteOrder = async (orderId) => {
+  const archiveOrder = async (orderId) => {
     try {
-      await logOrderEvent({
-        orderId,
-        type: "ORDER_DELETED",
+      await updateDoc(doc(db, "orders", orderId), {
+        archived: true,
       });
 
-      await deleteDoc(doc(db, "orders", orderId));
+      await logOrderEvent({
+        orderId,
+        type: "ORDER_ARCHIVED",
+      });
+
     } catch (error) {
-      console.error("deleteOrder error:", error);
+      console.error("archiveOrder error:", error);
     }
   };
 
   const filteredOrders =
-    filter === "all"
+    (filter === "all"
       ? orders
-      : orders.filter((o) => o.status === filter);
+      : orders.filter((o) => o.status === filter)
+    ).filter((o) => !o.archived);
+
 
   /* =====================
      RENDER
@@ -395,13 +418,24 @@ const AdminOrders = () => {
               >
                 Completado
               </button>
-
+              {/*
               <button
                 className="btn btn--danger"
                 onClick={() => updateStatus(order, "cancelled")}
               >
                 Cancelar
-              </button>
+              </button> */}
+
+
+              {order.status === "completed" && (
+                <button
+                  className="btn btn--secondary"
+                  onClick={() => archiveOrder(order.id)}
+                >
+                  Archivar
+                </button>
+              )}
+
 
               <button
                 className="btn"
@@ -417,13 +451,14 @@ const AdminOrders = () => {
               >
                 WhatsApp
               </button>
-
               <button
                 className="order-delete-btn"
                 onClick={() => deleteOrder(order.id)}
               >
                 ✖
               </button>
+
+
             </footer>
 
             <aside>

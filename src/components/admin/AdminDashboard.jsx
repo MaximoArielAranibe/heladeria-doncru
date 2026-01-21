@@ -52,6 +52,19 @@ const AdminDashboard = () => {
         </div>
       </div>
 
+      {/*       <div className="metric-card">
+        <Link to="/admin/orders/archived">
+          Pedidos archivados
+        </Link>
+
+      </div> */}
+
+      <div className="metric-card muted">
+        <span>Pedidos archivados</span>
+        <strong>{metrics.archivedCount}</strong>
+      </div>
+
+
       {/* =====================
           BOTONES
       ===================== */}

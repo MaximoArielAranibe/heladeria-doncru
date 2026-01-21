@@ -19,6 +19,7 @@ import AdminLogin from "./pages/AdminLogin.jsx";
 import AdminLayout from "./components/admin/AdminLayout.jsx";
 import AdminDashboard from "./components/admin/AdminDashboard.jsx";
 import Orders from "./components/admin/Orders.jsx";
+import AdminArchivedOrders from "./components/admin/AdminArchiviedOrders.jsx";
 
 function App() {
 
@@ -48,6 +49,13 @@ function App() {
             >
               <Route index element={<AdminDashboard />} />
               <Route path="pedidos" element={<Orders />} />
+              <Route
+                path="/admin/orders/archived"
+                element={<ProtectedRoute>
+                  <AdminArchivedOrders />
+                </ProtectedRoute>}
+              />
+
             </Route>
           </Routes>
 
