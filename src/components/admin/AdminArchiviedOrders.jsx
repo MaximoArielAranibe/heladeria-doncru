@@ -125,7 +125,13 @@ const AdminArchivedOrders = () => {
           <ul className="order-card__items">
             {order.items?.map((item, idx) => (
               <li key={idx}>
-                {item.title} x{item.quantity}
+                <strong>{item.title}</strong> x{item.quantity}
+
+                {item.gustos?.length > 0 && (
+                  <div className="archived-gustos">
+                    🍦 Gustos: {item.gustos.join(", ")}
+                  </div>
+                )}
               </li>
             ))}
           </ul>
