@@ -1,5 +1,5 @@
 import "../../styles/AdminOrders.scss";
-import { useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { getArchivedOrders } from "../../services/orders.service";
 
 const PAGE_SIZE = 10;
@@ -10,24 +10,20 @@ const AdminArchivedOrders = () => {
   const [loading, setLoading] = useState(false);
 
   const [dateFilter, setDateFilter] = useState("");
-  const [dateFilterDraft, setDateFilterDraft] = useState("");
+  const [dateDraft, setDateDraft] = useState("");
 
-  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
-
-  const hasInitialized = useRef(false);
-  const isFetching = useRef(false);
+  const [hasFetched, setHasFetched] = useState(false);
 
   const fetchOrders = useCallback(
-    async ({ reset = false, date = dateFilter } = {}) => {
-      if (isFetching.current) return;
+    async ({ reset = false } = {}) => {
+      if (loading) return;
 
-      isFetching.current = true;
       setLoading(true);
 
       const res = await getArchivedOrders({
         pageSize: PAGE_SIZE,
         lastDoc: reset ? null : lastDoc,
-        date: date || null,
+        date: dateFilter || null,
       });
 
       setOrders((prev) =>
@@ -35,56 +31,48 @@ const AdminArchivedOrders = () => {
       );
 
       setLastDoc(res.lastDoc);
-      setHasLoadedOnce(true);
+      setHasFetched(true);
       setLoading(false);
-      isFetching.current = false;
     },
-    [dateFilter, lastDoc]
+    [dateFilter, lastDoc, loading]
   );
 
-  // ✅ EJECUCIÓN INICIAL (SIN useEffect)
-  if (!hasInitialized.current) {
-    hasInitialized.current = true;
+  useEffect(() => {
     fetchOrders({ reset: true });
-  }
-
-  const applyDateFilter = () => {
-    setOrders([]);
-    setLastDoc(null);
-    setHasLoadedOnce(false);
-    setDateFilter(dateFilterDraft);
-    fetchOrders({ reset: true, date: dateFilterDraft });
-  };
+  }, [fetchOrders]);
 
   return (
     <section className="admin-archived-orders">
       <h2>Pedidos archivados</h2>
 
+      {/* FILTRO */}
       <div className="archived-filters">
         <input
           type="date"
-          value={dateFilterDraft}
-          onChange={(e) => setDateFilterDraft(e.target.value)}
+          value={dateDraft}
+          onChange={(e) => setDateDraft(e.target.value)}
         />
 
         <button
           className="btn btn--secondary"
-          onClick={applyDateFilter}
-          disabled={loading}
+          onClick={() => setDateFilter(dateDraft)}
         >
           Aplicar filtro
         </button>
       </div>
 
+      {/* EMPTY STATE ESTABLE */}
       <p
-        className={`archived-empty ${
-          hasLoadedOnce && !loading && orders.length === 0
+        className={`archived-empty ${hasFetched && !loading && orders.length === 0
             ? "visible"
             : ""
-        }`}
+          }`}
       >
-        No hay pedidos archivados
+        {dateFilter
+          ? "No hay pedidos archivados en este día"
+          : "No hay pedidos archivados"}
       </p>
+
 
       {orders.map((order) => (
         <article key={order.id} className="order-card archived">
@@ -96,15 +84,9 @@ const AdminArchivedOrders = () => {
           <section className="order-card__info">
             <p>
               <strong>Comprador:</strong>{" "}
-              {order.customer?.name || "Cliente sin nombre"}
+              {order.customer?.name || "Sin nombre"}
             </p>
-
-            {order.customer?.phone && <p>📞 {order.customer.phone}</p>}
-
-            <p>
-              <strong>Total:</strong> ${order.total}
-            </p>
-
+            <p><strong>Total:</strong> ${order.total}</p>
             <p>
               <strong>Fecha:</strong>{" "}
               {order.createdAt?.toDate?.().toLocaleString() || "—"}

@@ -82,15 +82,13 @@ export const getActiveOrders = async () => {
    (simple OR paginated)
 ===================== */
 
-export const getArchivedOrders = async (params = {}) => {
-  const {
-    pageSize,
-    lastDoc,
-    date,
-  } = params;
-
+export const getArchivedOrders = async ({
+  pageSize,
+  lastDoc,
+  date,
+} = {}) => {
   /* =====================
-     MODO SIMPLE (compat)
+     SIMPLE MODE (legacy)
   ===================== */
   if (!pageSize) {
     const q = query(
@@ -108,14 +106,12 @@ export const getArchivedOrders = async (params = {}) => {
   }
 
   /* =====================
-     MODO PAGINADO + FILTRO
+     PAGINATED MODE
   ===================== */
 
-  const constraints = [
+  const baseConstraints = [
     collection(db, "orders"),
     where("archived", "==", true),
-    orderBy("createdAt", "desc"),
-    limit(pageSize),
   ];
 
   // 📅 filtro por día
@@ -127,20 +123,22 @@ export const getArchivedOrders = async (params = {}) => {
       new Date(`${date}T23:59:59`)
     );
 
-    constraints.splice(
-      1,
-      0,
+    baseConstraints.push(
       where("createdAt", ">=", start),
       where("createdAt", "<=", end)
     );
   }
 
-  // ⬇️ paginación
+  baseConstraints.push(
+    orderBy("createdAt", "desc"),
+    limit(pageSize)
+  );
+
   if (lastDoc) {
-    constraints.push(startAfter(lastDoc));
+    baseConstraints.push(startAfter(lastDoc));
   }
 
-  const q = query(...constraints);
+  const q = query(...baseConstraints);
   const snapshot = await getDocs(q);
 
   return {
