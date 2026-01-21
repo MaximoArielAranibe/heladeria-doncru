@@ -4,16 +4,27 @@ import SalesBarChart from "./SalesBarChart";
 import "../../styles/AdminDashboard.scss";
 import AdminArchivedOrders from "./AdminArchiviedOrders";
 
+const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_DASHBOARD_PASSWORD;
+
 const AdminDashboard = () => {
   const [metrics, setMetrics] = useState(null);
   const [showDailySales, setShowDailySales] = useState(false);
   const [hideEmptyDays, setHideEmptyDays] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
 
+  // 🔐 control de ventas totales
+  const [canSeeTotalRevenue, setCanSeeTotalRevenue] = useState(false);
+
+  /* =====================
+     FETCH METRICS
+  ===================== */
   useEffect(() => {
     getMetrics().then(setMetrics);
   }, []);
 
+  /* =====================
+     SALES BY DAY (MES)
+  ===================== */
   const salesByDayComplete = useMemo(() => {
     if (!metrics) return [];
 
@@ -23,15 +34,37 @@ const AdminDashboard = () => {
       today.getMonth()
     );
 
-    const days = daysOfMonth.map((day) => ({
+    return daysOfMonth.map((day) => ({
       day,
       total: metrics.salesByDay[day] || 0,
     }));
+  }, [metrics]);
 
-    return hideEmptyDays
-      ? days.filter((d) => d.total > 0)
-      : days;
-  }, [metrics, hideEmptyDays]);
+  /* =====================
+     TODAY SALES
+  ===================== */
+  const todaySales = useMemo(() => {
+    if (!metrics) return 0;
+
+    const todayKey = new Date()
+      .toISOString()
+      .slice(0, 10);
+
+    return metrics.salesByDay[todayKey] || 0;
+  }, [metrics]);
+
+  /* =====================
+     PASSWORD HANDLER
+  ===================== */
+  const requestPassword = () => {
+    const input = prompt("Ingresá la contraseña para ver las ventas totales");
+
+    if (input === ADMIN_PASSWORD) {
+      setCanSeeTotalRevenue(true);
+    } else {
+      alert("Contraseña incorrecta");
+    }
+  };
 
   if (!metrics) return <p>Cargando métricas...</p>;
 
@@ -43,9 +76,28 @@ const AdminDashboard = () => {
           MÉTRICAS
       ===================== */}
       <div className="dashboard-grid">
-        <div className="metric-card">
+        {/* 🔐 VENTAS TOTALES PROTEGIDAS */}
+        <div
+          className="metric-card"
+          style={{ cursor: "pointer" }}
+          onClick={!canSeeTotalRevenue ? requestPassword : undefined}
+        >
           <span>Ventas totales</span>
-          <strong>${metrics.totalRevenue}</strong>
+          <strong>
+            {canSeeTotalRevenue ? (
+              `$${metrics.totalRevenue}`
+            ) : (
+              "••••••"
+            )}
+          </strong>
+          {!canSeeTotalRevenue && (
+            <small>Tocar para desbloquear</small>
+          )}
+        </div>
+
+        <div className="metric-card highlight">
+          <span>Ventas de hoy</span>
+          <strong>${todaySales}</strong>
         </div>
 
         <div className="metric-card">
@@ -66,8 +118,6 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-
-
       {/* =====================
           ARCHIVADOS
       ===================== */}
@@ -85,8 +135,6 @@ const AdminDashboard = () => {
             ? "Ocultar ventas por día"
             : "Ver ventas por día"}
         </button>
-
-
 
         {showDailySales && (
           <button

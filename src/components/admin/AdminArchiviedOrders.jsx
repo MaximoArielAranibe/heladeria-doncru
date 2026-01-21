@@ -1,5 +1,5 @@
 import "../../styles/AdminOrders.scss";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { getArchivedOrders } from "../../services/orders.service";
 
 const PAGE_SIZE = 10;
@@ -9,8 +9,8 @@ const AdminArchivedOrders = () => {
   const [lastDoc, setLastDoc] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // filtro aplicado
-  const [dateFilter, setDateFilter] = useState("");
+  // null = sin filtro (ver todos)
+  const [dateFilter, setDateFilter] = useState(null);
 
   // buffer del input
   const [dateDraft, setDateDraft] = useState("");
@@ -26,7 +26,7 @@ const AdminArchivedOrders = () => {
       const res = await getArchivedOrders({
         pageSize: PAGE_SIZE,
         lastDoc: reset ? null : lastDoc,
-        date: dateFilter || null,
+        date: dateFilter,
       });
 
       setOrders((prev) =>
@@ -40,11 +40,18 @@ const AdminArchivedOrders = () => {
     [dateFilter, lastDoc, loading]
   );
 
+  // ✅ FETCH INICIAL (una sola vez)
+  useEffect(() => {
+    fetchOrders({ reset: true });
+  }, []); // 👈 intencionalmente vacío
+
   const applyFilter = () => {
     setOrders([]);
     setLastDoc(null);
     setHasFetched(false);
-    setDateFilter(dateDraft);
+
+    setDateFilter(dateDraft || null);
+
     fetchOrders({ reset: true });
   };
 
@@ -72,7 +79,7 @@ const AdminArchivedOrders = () => {
       </div>
 
       {/* =====================
-          LOADING ESTABLE
+          LOADING REAL
       ===================== */}
       {loading && (
         <p className="admin-orders__loading">
