@@ -75,7 +75,7 @@ Productos: $${total}
 Envío estimado: ${shippingEstimated !== null ? `$${shippingEstimated}` : "A confirmar"
       }
 
-*El costo de envío se confirma por WhatsApp.*
+*El costo de envío te lo confirmamos en breve!!*
     `.trim();
   };
 

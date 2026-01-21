@@ -59,7 +59,6 @@ const CreateProductModal = ({ open, onClose }) => {
       setLoading(true);
       setError(null);
 
-      // 📤 subir imagen
       const imageUrl = await uploadProductImage(imageFile);
 
       await createProduct({
@@ -86,14 +85,17 @@ const CreateProductModal = ({ open, onClose }) => {
   };
 
   return (
-    <div className="modal-backdrop">
-      <div className="modal">
-        <header className="modal__header">
+    <div className="create-product-modal__backdrop">
+      <div className="create-product-modal">
+        <header className="create-product-modal__header">
           <h3>Nuevo producto</h3>
           <button onClick={onClose}>✖</button>
         </header>
 
-        <form className="modal__form" onSubmit={handleSubmit}>
+        <form
+          className="create-product-modal__form"
+          onSubmit={handleSubmit}
+        >
           <input
             name="title"
             placeholder="Nombre (Helado 3/4 kg)"
@@ -124,8 +126,8 @@ const CreateProductModal = ({ open, onClose }) => {
             onChange={handleChange}
           />
 
-          {/* 🏷️ CATEGORÍA */}
-          <div className=""><p>Categorias:</p>
+          <div>
+            <p>Categorías:</p>
             <select
               name="category"
               value={form.category}
@@ -133,49 +135,53 @@ const CreateProductModal = ({ open, onClose }) => {
             >
               <option value="tamaños">Tamaños</option>
               <option value="postres">Postres</option>
-            </select></div>
+            </select>
+          </div>
 
           {/* 📸 IMAGEN */}
+          <div
+            className="create-product-modal__image-drop"
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
+              e.preventDefault();
+              handleImage(e.dataTransfer.files[0]);
+            }}
+          >
+            <input
+              type="file"
+              accept="image/*"
+              hidden
+              id="createProductImageInput"
+              onChange={(e) =>
+                handleImage(e.target.files[0])
+              }
+            />
 
-{/* 📸 IMAGEN */}
-<div
-  className="image-drop"
-  onDragOver={(e) => e.preventDefault()}
-  onDrop={(e) => {
-    e.preventDefault();
-    handleImage(e.dataTransfer.files[0]);
-  }}
->
-  <input
-    type="file"
-    accept="image/*"
-    hidden
-    id="imageInput"
-    onChange={(e) => handleImage(e.target.files[0])}
-  />
+            {!preview ? (
+              <label htmlFor="createProductImageInput">
+                Arrastrá o hacé click para subir imagen
+              </label>
+            ) : (
+              <div className="create-product-modal__image-preview">
+                <img src={preview} alt="preview" />
+                <button
+                  type="button"
+                  className="create-product-modal__change-image-btn"
+                  onClick={() =>
+                    document
+                      .getElementById(
+                        "createProductImageInput"
+                      )
+                      .click()
+                  }
+                >
+                  Cambiar imagen
+                </button>
+              </div>
+            )}
+          </div>
 
-  {!preview ? (
-    <label htmlFor="imageInput">
-      Arrastrá o hacé click para subir imagen
-    </label>
-  ) : (
-    <div className="image-preview">
-      <img src={preview} alt="preview" />
-
-      <button
-        type="button"
-        className="change-image-btn"
-        onClick={() =>
-          document.getElementById("imageInput").click()
-        }
-      >
-        Cambiar imagen
-      </button>
-    </div>
-  )}
-</div>
-
-          <label className="checkbox">
+          <label>
             <input
               type="checkbox"
               name="featured"
@@ -185,7 +191,7 @@ const CreateProductModal = ({ open, onClose }) => {
             Destacado
           </label>
 
-          <label className="checkbox">
+          <label>
             <input
               type="checkbox"
               name="masVendido"
@@ -195,9 +201,13 @@ const CreateProductModal = ({ open, onClose }) => {
             Más vendido
           </label>
 
-          {error && <p className="modal__error">{error}</p>}
+          {error && (
+            <p className="create-product-modal__error">
+              {error}
+            </p>
+          )}
 
-          <footer className="modal__actions">
+          <footer className="create-product-modal__actions">
             <button
               type="button"
               className="btn btn--secondary"

@@ -352,6 +352,16 @@ const AdminOrders = () => {
                   <strong>Cliente:</strong> {order.customer.name}
                 </p>
               )}
+              {order.customer?.direction && (
+                <p>
+                  <strong>Dirección:</strong> {order.customer.direction}
+                </p>
+              )}
+              {order.customer?.direction && (
+                <p>
+                  <strong>Total con envió:</strong> {order.total + order.shipping?.final}
+                </p>
+              )}
               {order.customer?.phone && (
                 <p>
                   <strong>Teléfono:</strong>{" "}

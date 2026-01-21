@@ -19,9 +19,9 @@ const Home = () => {
       <BrandContainer />
       <section>
         <Text text='nuestros productos' />
-        <>
+
           {isAdmin && (
-            <button className="btn btn--primary" onClick={() => setOpen(true)}>
+            <button className="btn btn--primary btn--addProduct" onClick={() => setOpen(true)}>
               + Agregar producto
             </button>
           )}
@@ -30,12 +30,12 @@ const Home = () => {
             open={open}
             onClose={() => setOpen(false)}
           />
-        </>
+
         <CardsContainer />
       </section>
       <Text text='nuestros sabores' />
       <CategoriesCarousel />
-      <Text text='🌟 EL MÁS PEDIDO 🌟' />
+      <Text text='🌟 LOS MÁS PEDIDOS 🌟' />
       <CardsVerticalContainer />
       <Why />
       <CTA />

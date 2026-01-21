@@ -1,4 +1,4 @@
-.modal-backdrop {
+.create-product-modal__backdrop {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.45);
@@ -6,10 +6,9 @@
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  height: 100%;
 }
 
-.modal {
+.create-product-modal {
   background: #fff;
   border-radius: 16px;
   width: 100%;
@@ -18,7 +17,7 @@
   min-height: max-content;
 }
 
-.modal__header {
+.create-product-modal__header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -35,14 +34,15 @@
   }
 }
 
-.modal__form {
+.create-product-modal__form {
   display: flex;
   flex-direction: column;
   gap: 10px;
   margin-top: 12px;
 
   input,
-  textarea {
+  textarea,
+  select {
     padding: 10px 12px;
     border-radius: 10px;
     border: 1px solid #e5e7eb;
@@ -55,20 +55,22 @@
   }
 }
 
-.modal__actions {
+.create-product-modal__actions {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
   margin-top: 12px;
 }
 
-.modal__error {
+.create-product-modal__error {
   color: #ef4444;
   font-size: 13px;
   font-weight: 600;
 }
 
-.image-drop {
+/* 📸 Imagen */
+
+.create-product-modal__image-drop {
   border: 2px dashed #e5e7eb;
   border-radius: 14px;
   height: 140px;
@@ -95,7 +97,7 @@
   }
 }
 
-.image-preview {
+.create-product-modal__image-preview {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -110,7 +112,7 @@
   }
 }
 
-.change-image-btn {
+.create-product-modal__change-image-btn {
   background: #ec4899;
   color: #fff;
   border: none;
