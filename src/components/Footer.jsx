@@ -6,7 +6,6 @@ const Footer = () => {
   return (
     <footer className="footer">
       <div className="footer__container">
-
         {/* Logo + descripción */}
         <div className="footer__brand">
           <img src={logo} alt="Heladería Don Cru" />
@@ -31,12 +30,23 @@ const Footer = () => {
         <div className="footer__contact">
           <h4>Contacto</h4>
           <p>📍 Pergamino, Buenos Aires</p>
-          <p>📞 +54 9 2477-361535</p> {/* Link */}
-          <p>📞 +54 9 2477-349023</p> {/* Link */}
+          <p>📞 <a href="tel:+5492477361535">+54 9 2477-361535</a></p>
+          <p>📞 <a href="tel:+5492477349023">+54 9 2477-349023</a></p>
           <p>🕒 Todos los días</p>
-          <p>☀️<strong> 12:00hs a 17:30hs</strong></p>
-          <p>🌙<strong>19:00hs a 00:30h</strong></p>
+          <p>☀️ <strong>12:00hs a 17:30hs</strong></p>
+          <p>🌙 <strong>19:00hs a 00:30hs</strong></p>
         </div>
+      </div>
+
+      {/* MAPA */}
+      <div className="footer__map">
+        <iframe
+          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d4684.491525214265!2d-60.58302593813583!3d-33.878430422366705!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x95b9cb0014ef18d1%3A0xee50fb39f4042de7!2sHELADOS%20DONCRU!5e0!3m2!1ses-419!2sar!4v1769115741718!5m2!1ses-419!2sar"
+          loading="lazy"
+          referrerPolicy="no-referrer-when-downgrade"
+          allowFullScreen
+          title="Mapa Heladería Don Cru"
+        />
       </div>
 
       {/* Copyright */}

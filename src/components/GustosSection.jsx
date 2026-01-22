@@ -119,40 +119,6 @@ const GustosSection = ({ category = "todos", title }) => {
     }
   };
 
-  /* =====================
-     CREATE
-  ===================== */
-  /* const handleCreate = async () => {
-    if (!newGusto.name.trim()) {
-      toast.error("El nombre no puede estar vacío");
-      return;
-    }
-
-    const finalCategory =
-      newGusto.category === "__new__"
-        ? slugify(newGusto.newCategory)
-        : newGusto.category;
-
-    if (!finalCategory) {
-      toast.error("Completá la categoría");
-      return;
-    }
-
-    try {
-      await createGusto({
-        name: newGusto.name.trim(),
-        weight: newGusto.weight,
-        category: finalCategory,
-      });
-
-      toast.success("Gusto creado 🍨");
-      setNewGusto({ name: "", category: "", newCategory: "" });
-      setCreating(false);
-    } catch (error) {
-      toast.error("Error al crear gusto");
-      console.error(error);
-    }
-  }; */
 
   const handleCreate = async () => {
     // 🧪 VALIDACIONES

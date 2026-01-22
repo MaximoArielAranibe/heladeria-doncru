@@ -16,11 +16,22 @@ export const getDaysOfMonth = (year, month) => {
   const days = [];
 
   while (date.getMonth() === month) {
-    days.push(date.toISOString().slice(0, 10));
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
+
+    days.push(`${y}-${m}-${d}`);
     date.setDate(date.getDate() + 1);
   }
 
   return days;
+};
+
+const getLocalDateKey = (date) => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
 };
 
 const normalizeNumber = (value) => {
@@ -46,44 +57,43 @@ export const getMetrics = async () => {
   let archivedCount = 0;
 
   const salesByDay = {};
+  const ordersByDay = {}; // 👈 NUEVO
   const products = {};
 
   snapshot.forEach((doc) => {
     const order = doc.data();
 
+    if (!order.createdAt?.toDate) return;
+
+    const dateKey = getLocalDateKey(order.createdAt.toDate());
+
     /* =====================
-    ARCHIVED COUNT
+      PEDIDOS POR DÍA
+    ===================== */
+    ordersByDay[dateKey] = (ordersByDay[dateKey] || 0) + 1;
+
+    /* =====================
+      ARCHIVADOS
     ===================== */
     if (order.archived === true) {
       archivedCount++;
     }
 
-    // 🛡️ defensive checks
-    if (!order.createdAt?.toDate) return;
-
     const orderTotal = normalizeNumber(order.total);
     if (orderTotal <= 0) return;
 
-    // ✅ LOS ARCHIVADOS TAMBIÉN CUENTAN
     totalRevenue += orderTotal;
     totalOrders++;
 
     /* =====================
-    SALES BY DAY
+      VENTAS POR DÍA
     ===================== */
-
-    const dateKey = order.createdAt
-      .toDate()
-      .toISOString()
-      .slice(0, 10);
-
     salesByDay[dateKey] =
       (salesByDay[dateKey] || 0) + orderTotal;
 
     /* =====================
       PRODUCTS
     ===================== */
-
     if (Array.isArray(order.items)) {
       order.items.forEach((item) => {
         const key =
@@ -102,6 +112,7 @@ export const getMetrics = async () => {
     totalOrders,
     archivedCount,
     salesByDay,
+    ordersByDay, // 👈 EXPORTAMOS
     products,
   };
 };

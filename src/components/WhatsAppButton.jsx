@@ -1,6 +1,12 @@
-import '../styles/WhatAppButton.scss'
+import { useAuth } from "../hooks/useAuth";
+import "../styles/WhatAppButton.scss";
 
 const WhatsAppButton = () => {
+  const { role } = useAuth();
+  const isAdmin = role === "admin";
+
+  if (isAdmin) return null;
+
   return (
     <a
       href="https://wa.me/5492477361535"
