@@ -29,9 +29,10 @@ const Home = () => {
           <CreateProductModal
             open={open}
             onClose={() => setOpen(false)}
+            defaultCategory='tamaños'
           />
 
-        <CardsContainer />
+        <CardsContainer category="tamaños"/>
       </section>
       <Text text='nuestros sabores' />
       <CategoriesCarousel />

@@ -48,8 +48,11 @@ const Carrito = () => {
   const shippingEstimated = SHIPPING_ZONES[zone]?.price ?? null;
 
   const hasInvalidItems = cart.some(
-    (item) => !item.gustos || item.gustos.length === 0
+    (item) =>
+      item.category !== "postres" &&
+      (!item.gustos || item.gustos.length === 0)
   );
+
 
   const buildWhatsappMessage = (orderId) => {
     const items = cart
@@ -68,7 +71,7 @@ Hola! Soy *${nameRef.current}* 👋
 Dirección: *${directionRef.current}*
 Zona: *${SHIPPING_ZONES[zone].label}*
 
-Pedido:
+*Pedido:*
 ${items}
 
 Productos: $${total}

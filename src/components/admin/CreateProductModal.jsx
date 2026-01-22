@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createProduct } from "../../services/products.service";
 import { uploadProductImage } from "../../services/uploadImage.service";
 import "../../styles/CreateProductModal.scss";
@@ -13,14 +13,38 @@ const INITIAL_STATE = {
   masVendido: false,
 };
 
-const CreateProductModal = ({ open, onClose }) => {
-  const [form, setForm] = useState(INITIAL_STATE);
+const CreateProductModal = ({
+  open,
+  onClose,
+  defaultCategory = "tamaños",
+}) => {
+  const [form, setForm] = useState({
+    ...INITIAL_STATE,
+    category: defaultCategory,
+  });
   const [imageFile, setImageFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  if (!open) return null;
+  useEffect(() => {
+    setForm((prev) => ({
+      ...prev,
+      category: defaultCategory,
+    }));
+  }, [defaultCategory]);
+
+/*   if (!open) return null;
+ */
+  /* =====================
+     SYNC CATEGORY
+  ===================== */
+  useEffect(() => {
+    setForm((prev) => ({
+      ...prev,
+      category: defaultCategory,
+    }));
+  }, [defaultCategory]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -72,7 +96,10 @@ const CreateProductModal = ({ open, onClose }) => {
         masVendido: form.masVendido,
       });
 
-      setForm(INITIAL_STATE);
+      setForm({
+        ...INITIAL_STATE,
+        category: defaultCategory,
+      });
       setImageFile(null);
       setPreview(null);
       onClose();
@@ -85,149 +112,154 @@ const CreateProductModal = ({ open, onClose }) => {
   };
 
   return (
-    <div className="create-product-modal__backdrop">
-      <div className="create-product-modal">
-        <header className="create-product-modal__header">
-          <h3>Nuevo producto</h3>
-          <button onClick={onClose}>✖</button>
-        </header>
+    <>
+      {open && (
+        <div className="create-product-modal__backdrop">
+          <div className="create-product-modal">
+            <header className="create-product-modal__header">
+              <h3>Nuevo producto</h3>
+              <button onClick={onClose}>✖</button>
+            </header>
 
-        <form
-          className="create-product-modal__form"
-          onSubmit={handleSubmit}
-        >
-          <input
-            name="title"
-            placeholder="Nombre (Helado 3/4 kg)"
-            value={form.title}
-            onChange={handleChange}
-          />
-
-          <textarea
-            name="description"
-            placeholder="Descripción"
-            value={form.description}
-            onChange={handleChange}
-          />
-
-          <input
-            type="number"
-            name="price"
-            placeholder="Precio"
-            value={form.price}
-            onChange={handleChange}
-          />
-
-          <input
-            type="number"
-            name="maxGustos"
-            placeholder="Máx gustos"
-            value={form.maxGustos}
-            onChange={handleChange}
-          />
-
-          <div>
-            <p>Categorías:</p>
-            <select
-              name="category"
-              value={form.category}
-              onChange={handleChange}
+            <form
+              className="create-product-modal__form"
+              onSubmit={handleSubmit}
             >
-              <option value="tamaños">Tamaños</option>
-              <option value="postres">Postres</option>
-            </select>
-          </div>
+              <input
+                name="title"
+                placeholder="Nombre (Helado 3/4 kg)"
+                value={form.title}
+                onChange={handleChange}
+              />
 
-          {/* 📸 IMAGEN */}
-          <div
-            className="create-product-modal__image-drop"
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={(e) => {
-              e.preventDefault();
-              handleImage(e.dataTransfer.files[0]);
-            }}
-          >
-            <input
-              type="file"
-              accept="image/*"
-              hidden
-              id="createProductImageInput"
-              onChange={(e) =>
-                handleImage(e.target.files[0])
-              }
-            />
+              <textarea
+                name="description"
+                placeholder="Descripción"
+                value={form.description}
+                onChange={handleChange}
+              />
 
-            {!preview ? (
-              <label htmlFor="createProductImageInput">
-                Arrastrá o hacé click para subir imagen
+              <input
+                type="number"
+                name="price"
+                placeholder="Precio"
+                value={form.price}
+                onChange={handleChange}
+              />
+
+              <input
+                type="number"
+                name="maxGustos"
+                placeholder="Máx gustos"
+                value={form.maxGustos}
+                onChange={handleChange}
+              />
+
+              <div>
+                <p>Categorías:</p>
+                <select
+                  name="category"
+                  value={form.category}
+                  onChange={handleChange}
+                >
+                  <option value="tamaños">Tamaños</option>
+                  <option value="postres">Postres</option>
+                </select>
+              </div>
+
+              {/* 📸 IMAGEN */}
+              <div
+                className="create-product-modal__image-drop"
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  handleImage(e.dataTransfer.files[0]);
+                }}
+              >
+                <input
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  id="createProductImageInput"
+                  onChange={(e) =>
+                    handleImage(e.target.files[0])
+                  }
+                />
+
+                {!preview ? (
+                  <label htmlFor="createProductImageInput">
+                    Arrastrá o hacé click para subir imagen
+                  </label>
+                ) : (
+                  <div className="create-product-modal__image-preview">
+                    <img src={preview} alt="preview" />
+                    <button
+                      type="button"
+                      className="create-product-modal__change-image-btn"
+                      onClick={() =>
+                        document
+                          .getElementById(
+                            "createProductImageInput"
+                          )
+                          .click()
+                      }
+                    >
+                      Cambiar imagen
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <label>
+                <input
+                  type="checkbox"
+                  name="featured"
+                  checked={form.featured}
+                  onChange={handleChange}
+                />
+                Destacado
               </label>
-            ) : (
-              <div className="create-product-modal__image-preview">
-                <img src={preview} alt="preview" />
+
+              <label>
+                <input
+                  type="checkbox"
+                  name="masVendido"
+                  checked={form.masVendido}
+                  onChange={handleChange}
+                />
+                Más vendido
+              </label>
+
+              {error && (
+                <p className="create-product-modal__error">
+                  {error}
+                </p>
+              )}
+
+              <footer className="create-product-modal__actions">
                 <button
                   type="button"
-                  className="create-product-modal__change-image-btn"
-                  onClick={() =>
-                    document
-                      .getElementById(
-                        "createProductImageInput"
-                      )
-                      .click()
-                  }
+                  className="btn btn--secondary"
+                  onClick={onClose}
+                  disabled={loading}
                 >
-                  Cambiar imagen
+                  Cancelar
                 </button>
-              </div>
-            )}
+
+                <button
+                  className="btn btn--primary"
+                  disabled={loading}
+                >
+                  {loading ? "Subiendo…" : "Crear producto"}
+                </button>
+              </footer>
+            </form>
           </div>
-
-          <label>
-            <input
-              type="checkbox"
-              name="featured"
-              checked={form.featured}
-              onChange={handleChange}
-            />
-            Destacado
-          </label>
-
-          <label>
-            <input
-              type="checkbox"
-              name="masVendido"
-              checked={form.masVendido}
-              onChange={handleChange}
-            />
-            Más vendido
-          </label>
-
-          {error && (
-            <p className="create-product-modal__error">
-              {error}
-            </p>
-          )}
-
-          <footer className="create-product-modal__actions">
-            <button
-              type="button"
-              className="btn btn--secondary"
-              onClick={onClose}
-              disabled={loading}
-            >
-              Cancelar
-            </button>
-
-            <button
-              className="btn btn--primary"
-              disabled={loading}
-            >
-              {loading ? "Subiendo…" : "Crear producto"}
-            </button>
-          </footer>
-        </form>
-      </div>
-    </div>
+        </div>
+      )}
+    </>
   );
+
 };
 
 export default CreateProductModal;

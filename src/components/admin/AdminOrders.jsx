@@ -14,7 +14,8 @@ import OrderHistory from "./OrderHistory";
 import { useOrderEvents } from "../../hooks/useOrderEvents.js";
 import { deleteDoc } from "firebase/firestore";
 import { archiveOrderWithStock } from "../../services/orders.service.js";
-import toast from "react-hot-toast/headless";
+import toast from "react-hot-toast";
+
 
 /* =====================
   EMOJIS (UNICODE SAFE)

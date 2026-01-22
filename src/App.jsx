@@ -21,15 +21,17 @@ import AdminDashboard from "./components/admin/AdminDashboard.jsx";
 import Orders from "./components/admin/Orders.jsx";
 import AdminArchivedOrders from "./components/admin/AdminArchiviedOrders.jsx";
 import AdminStock from "./components/admin/AdminStock.jsx";
+import Postres from "./pages/Postres.jsx";
 
 function App() {
+
   return (
     <CartProvider>
       <AuthProvider>
         <BrowserRouter>
           <ScrollToTop />
           <Navbar />
-          <WhatsAppButton />
+          {<WhatsAppButton />}
 
           <Routes>
             {/* ===================== PUBLIC ===================== */}
@@ -37,6 +39,7 @@ function App() {
             <Route path="/gustos" element={<Gustos />} />
             <Route path="/gustos/:categoria" element={<Gustos />} />
             <Route path="/tamaños" element={<Tamaños />} />
+            <Route path="/postres" element={<Postres />} />
             <Route path="/carrito" element={<Carrito />} />
             <Route path="/admin/login" element={<AdminLogin />} />
 

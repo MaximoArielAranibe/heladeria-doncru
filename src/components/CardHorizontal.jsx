@@ -5,7 +5,11 @@ import Button from "./Button";
 import StarBadge from "./StarBadge";
 import SelectGustosModal from "./SelectGustosModal";
 import { useAuth } from "../hooks/useAuth";
-import { updateProductPrice, deleteProduct } from "../services/products.service";
+import { useCart } from "../context/useCart"; // ✅ NUEVO
+import {
+  updateProductPrice,
+  deleteProduct,
+} from "../services/products.service";
 import toast from "react-hot-toast";
 
 const CardHorizontal = ({
@@ -19,13 +23,36 @@ const CardHorizontal = ({
   const { role } = useAuth();
   const isAdmin = role === "admin";
 
+  const { addToCart } = useCart(); // ✅ NUEVO
+
   const [openModal, setOpenModal] = useState(false);
   const [editingPrice, setEditingPrice] = useState(false);
   const [localPrice, setLocalPrice] = useState(price);
   const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(false); // 🗑️
+  const [deleting, setDeleting] = useState(false);
 
   const imageSrc = thumbnail && thumbnail !== "" ? thumbnail : foto;
+
+  /* =====================
+     PEDIR AHORA (LÓGICA NUEVA)
+  ===================== */
+  const handleOrder = () => {
+    if (product?.category === "postres") {
+      // 🧁 POSTRE → DIRECTO AL CARRITO
+      addToCart({
+        ...product,
+        price,
+        quantity: 1,
+        gustos: [],
+      });
+
+      toast.success("Postre agregado al carrito 🧁");
+      return;
+    }
+
+    // 🍦 TAMAÑOS → ABRIR MODAL DE GUSTOS
+    setOpenModal(true);
+  };
 
   const handleSavePrice = async () => {
     if (!product?.id) return;
@@ -43,7 +70,6 @@ const CardHorizontal = ({
     }
   };
 
-  // 🗑️ ELIMINAR PRODUCTO
   const handleDelete = async () => {
     if (!product?.id) return;
 
@@ -81,8 +107,9 @@ const CardHorizontal = ({
         {/* 🔧 ADMIN PRICE EDIT */}
         {isAdmin && editingPrice && (
           <div
-            className={`card__price-edit ${imageRight ? "card__price-edit--right" : ""
-              }`}
+            className={`card__price-edit ${
+              imageRight ? "card__price-edit--right" : ""
+            }`}
           >
             <input
               type="number"
@@ -120,7 +147,6 @@ const CardHorizontal = ({
             </p>
           )}
 
-          {/* 🔧 ADMIN ACTIONS */}
           {isAdmin && !editingPrice && (
             <>
               <button
@@ -145,13 +171,14 @@ const CardHorizontal = ({
 
           <Button
             text="Pedir ahora"
-            onClick={() => setOpenModal(true)}
+            onClick={handleOrder} // ✅ CAMBIO CLAVE
             className="card__texts__button"
           />
         </div>
       </div>
 
-      {product && (
+      {/* 🍦 SOLO TAMAÑOS ABREN MODAL */}
+      {product && product.category !== "postres" && (
         <SelectGustosModal
           product={{ ...product, price }}
           open={openModal}

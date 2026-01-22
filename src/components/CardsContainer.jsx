@@ -2,7 +2,7 @@ import "../styles/CardsContainer.scss";
 import CardHorizontal from "./CardHorizontal";
 import { useProducts } from "../hooks/useProducts";
 
-const CardsContainer = () => {
+const CardsContainer = ({ category }) => {
   const { products, loading } = useProducts();
 
   if (loading) {
@@ -16,7 +16,19 @@ const CardsContainer = () => {
     );
   }
 
-  const sortedProducts = [...products].sort(
+  /* =====================
+     FILTRO POR CATEGORÍA (SI EXISTE)
+  ===================== */
+  const filteredProducts = category
+    ? products.filter(
+        (product) => product.category === category
+      )
+    : products;
+
+  /* =====================
+     ORDENAR POR PRECIO
+  ===================== */
+  const sortedProducts = [...filteredProducts].sort(
     (a, b) => a.price - b.price
   );
 

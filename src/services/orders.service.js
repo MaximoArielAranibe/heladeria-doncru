@@ -192,13 +192,16 @@ export const archiveOrderWithStock = async (order) => {
     }
 
     for (const item of orderData.items) {
+      // 🧁 POSTRES O ITEMS SIN GUSTOS → NO DESCUENTAN STOCK
+      if (!Array.isArray(item.gustos) || item.gustos.length === 0) {
+        continue;
+      }
+
       const totalWeight = getWeightFromTitle(item.title);
 
       if (!totalWeight) {
         throw new Error(`Peso desconocido para ${item.title}`);
       }
-
-      if (!Array.isArray(item.gustos) || item.gustos.length === 0) continue;
 
       const weightPerGusto = totalWeight / item.gustos.length;
 

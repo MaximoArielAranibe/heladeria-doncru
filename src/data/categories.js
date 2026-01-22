@@ -28,7 +28,7 @@ export const categories = [
   },
   {
     title: "Cremas con extras",
-    slug: "cremas-extras",
+    slug: "cremas",
     image: cremaConExtrasImg,
   },
   {
