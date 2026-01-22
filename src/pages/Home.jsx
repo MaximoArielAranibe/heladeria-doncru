@@ -21,7 +21,7 @@ const Home = () => {
         <Text text='nuestros productos' />
 
           {isAdmin && (
-            <button className="btn btn--primary btn--addProduct" onClick={() => setOpen(true)}>
+            <button className="btn btn--primary" style={{marginLeft:"9rem", marginTop: "1rem"}} onClick={() => setOpen(true)}>
               + Agregar producto
             </button>
           )}

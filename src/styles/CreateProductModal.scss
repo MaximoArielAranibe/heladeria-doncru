@@ -14,7 +14,8 @@
   width: 100%;
   max-width: 420px;
   padding: 16px;
-  min-height: max-content;
+  max-height: 80%;
+  overflow-y: scroll;
 }
 
 .create-product-modal__header {
@@ -125,5 +126,12 @@
 
   &:hover {
     background: #db2777;
+  }
+}
+
+@media(min-width: 1024px){
+  .create-product-modal {
+    min-height: max-content;
+    overflow-y: auto;
   }
 }

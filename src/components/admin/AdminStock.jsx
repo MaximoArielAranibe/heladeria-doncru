@@ -189,6 +189,7 @@ const AdminStock = () => {
                 )}
               </div>
 
+
               <div className="admin-stock__actions">
                 {isEditing ? (
                   <>
