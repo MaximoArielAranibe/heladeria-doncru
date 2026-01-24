@@ -1,8 +1,10 @@
 import "../../styles/AdminStock.scss";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useGustos } from "../../hooks/useGustos";
 import { updateGusto } from "../../services/gustos.service";
 import toast from "react-hot-toast";
+import { createStockAlert } from "../../services/stockAlerts.service";
+import { useStockAlerts } from "../../hooks/useStockAlerts";
 
 /* =====================
    HELPERS
@@ -45,6 +47,8 @@ Reponer urgente 🍦
 
 const AdminStock = () => {
   const { gustos, loading } = useGustos();
+  const { alerts, loading: loadingAlerts } = useStockAlerts();
+
 
   /* =====================
      EDIT STATE
@@ -64,28 +68,35 @@ const AdminStock = () => {
      ALERTA VISUAL (NO AUTO WHATSAPP)
   ===================== */
 
-  useEffect(() => {
-    if (!gustos.length) return;
+// Guardamos estados anteriores
+const prevStatusRef = useRef({});
 
-    gustos.forEach((gusto) => {
-      const status = getStockStatus(gusto.weight);
+useEffect(() => {
+  if (!gustos.length) return;
 
-      // 🔴 Toast cuando entra en crítico
-      if (status === "danger") {
+  gustos.forEach((gusto) => {
+    const currentStatus = getStockStatus(gusto.weight);
+    const prevStatus = prevStatusRef.current[gusto.id];
+
+    // 👉 Solo si cambió el estado
+    if (currentStatus !== prevStatus) {
+      if (currentStatus === "danger") {
         toast.error(`⚠️ Stock crítico: ${gusto.name}`, {
-          id: `danger-${gusto.id}`, // evita spam
+          id: `danger-${gusto.id}`,
         });
       }
 
-      // 🟡 Toast warning
-      if (status === "warning") {
+      if (currentStatus === "warning") {
         toast(`🟡 Stock bajo: ${gusto.name}`, {
           id: `warning-${gusto.id}`,
         });
       }
-    });
-  }, [gustos]);
+    }
 
+    // Guardamos estado actual
+    prevStatusRef.current[gusto.id] = currentStatus;
+  });
+}, [gustos]);
   /* =====================
      CATEGORIES
   ===================== */
@@ -179,10 +190,28 @@ const AdminStock = () => {
      AVISO MANUAL
   ===================== */
 
-  const handleSendAlert = (gusto) => {
-    sendLowStockAlert(gusto, gusto.weight);
-    toast.success("Aviso enviado por WhatsApp 📲");
+  const handleSendAlert = async (gusto) => {
+    try {
+      console.log("enviando alerta..", gusto.name);
+
+      const status = getStockStatus(gusto.weight);
+
+      sendLowStockAlert(gusto, gusto.weight);
+
+      await createStockAlert({
+        gustoId: gusto.id,
+        gustoName: gusto.name,
+        status,
+        weight: gusto.weight,
+      });
+
+      toast.success("Aviso enviado y registrado 📲");
+    } catch (error) {
+      console.error(error);
+      toast.error("Error al guardar historial");
+    }
   };
+
 
   /* =====================
      RENDER
@@ -347,6 +376,47 @@ const AdminStock = () => {
           );
         })}
       </div>
+      {/* =====================
+    HISTORIAL ALERTAS
+===================== */}
+
+<section className="admin-stock__history">
+  <h3>📊 Historial de alertas</h3>
+
+  {loadingAlerts && <p>Cargando historial…</p>}
+
+  {!loadingAlerts && alerts.length === 0 && (
+    <p>No hay alertas registradas</p>
+  )}
+
+  {!loadingAlerts && alerts.length > 0 && (
+    <div className="alert-history">
+      {alerts.slice(0, 10).map((alert) => (
+        <div key={alert.id} className="alert-history__item">
+          <strong>{alert.gustoName}</strong>
+
+          <span>
+            {(alert.weight / 1000).toFixed(2)} kg
+          </span>
+
+          <span
+            className={`alert-tag ${alert.status}`}
+          >
+            {alert.status === "danger"
+              ? "Crítico"
+              : "Bajo"}
+          </span>
+
+          <small>
+            {alert.createdAt?.toDate?.().toLocaleString() ||
+              "—"}
+          </small>
+        </div>
+      ))}
+    </div>
+  )}
+</section>
+
     </section>
   );
 };
