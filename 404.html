@@ -5,9 +5,12 @@
     <title>Redirecting...</title>
 
     <script>
-      const redirect = location.pathname + location.search + location.hash;
-      sessionStorage.setItem("redirect", redirect);
-      location.replace("/");
+      const path = location.pathname + location.search + location.hash;
+
+      sessionStorage.setItem("redirect", path);
+
+      // Redirigir relativo (no absoluto)
+      location.replace("./");
     </script>
   </head>
   <body></body>
