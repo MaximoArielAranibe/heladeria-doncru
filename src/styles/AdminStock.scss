@@ -106,3 +106,18 @@
   font-size: 14px;
   color: #6b7280;
 }
+
+.btn-alert {
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: 0.2s;
+}
+
+.btn-alert:hover {
+  background: #1ebe5d;
+  transform: scale(1.05);
+}

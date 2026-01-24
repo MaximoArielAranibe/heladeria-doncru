@@ -433,7 +433,7 @@ const AdminOrders = () => {
     defaultValue=""
   >
     <option value="" disabled>
-      Elegir $
+      Costo envio
     </option>
 
     <option value="2000">$2000</option>

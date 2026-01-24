@@ -1,5 +1,5 @@
 import "../../styles/AdminStock.scss";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useGustos } from "../../hooks/useGustos";
 import { updateGusto } from "../../services/gustos.service";
 import toast from "react-hot-toast";
@@ -9,9 +9,34 @@ import toast from "react-hot-toast";
 ===================== */
 
 const getStockStatus = (weight = 0) => {
-  if (weight < 1000) return "danger";   // < 1kg
-  if (weight < 3000) return "warning";  // < 3kg
+  if (weight <= 3000) return "danger";   // 3kg o menos
+  if (weight <= 5000) return "warning";  // 5kg o menos
   return "ok";
+};
+
+/* =====================
+   WHATSAPP
+===================== */
+
+const ADMIN_PHONE = "5492477361535"; // 👈 TU NÚMERO
+
+const sendLowStockAlert = (gusto, weight) => {
+  const kg = (weight / 1000).toFixed(2);
+
+  const message = `
+⚠️ STOCK BAJO ⚠️
+
+Gusto: ${gusto.name}
+Stock: ${kg} kg
+
+Reponer urgente 🍦
+  `.trim();
+
+  const url = `https://api.whatsapp.com/send?phone=${ADMIN_PHONE}&text=${encodeURIComponent(
+    message
+  )}`;
+
+  window.open(url, "_blank");
 };
 
 /* =====================
@@ -34,6 +59,32 @@ const AdminStock = () => {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [search, setSearch] = useState("");
+
+  /* =====================
+     ALERTA VISUAL (NO AUTO WHATSAPP)
+  ===================== */
+
+  useEffect(() => {
+    if (!gustos.length) return;
+
+    gustos.forEach((gusto) => {
+      const status = getStockStatus(gusto.weight);
+
+      // 🔴 Toast cuando entra en crítico
+      if (status === "danger") {
+        toast.error(`⚠️ Stock crítico: ${gusto.name}`, {
+          id: `danger-${gusto.id}`, // evita spam
+        });
+      }
+
+      // 🟡 Toast warning
+      if (status === "warning") {
+        toast(`🟡 Stock bajo: ${gusto.name}`, {
+          id: `warning-${gusto.id}`,
+        });
+      }
+    });
+  }, [gustos]);
 
   /* =====================
      CATEGORIES
@@ -125,6 +176,15 @@ const AdminStock = () => {
   };
 
   /* =====================
+     AVISO MANUAL
+  ===================== */
+
+  const handleSendAlert = (gusto) => {
+    sendLowStockAlert(gusto, gusto.weight);
+    toast.success("Aviso enviado por WhatsApp 📲");
+  };
+
+  /* =====================
      RENDER
   ===================== */
 
@@ -162,7 +222,7 @@ const AdminStock = () => {
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
         >
-          <option value="all">Todos los estados</option>
+          <option value="all">Todos</option>
           <option value="ok">🟢 OK</option>
           <option value="warning">🟡 Bajo</option>
           <option value="danger">🔴 Crítico</option>
@@ -194,6 +254,7 @@ const AdminStock = () => {
               <div className="admin-stock__info">
                 <strong>{gusto.name}</strong>
                 <span className="category">{gusto.category}</span>
+
                 {isDisabled && (
                   <span
                     className="category"
@@ -230,6 +291,7 @@ const AdminStock = () => {
                     >
                       ✔
                     </button>
+
                     <button
                       className="btn-cancel"
                       onClick={cancelEdit}
@@ -244,6 +306,20 @@ const AdminStock = () => {
                       {status === "warning" && "🟡 Bajo"}
                       {status === "danger" && "🔴 Crítico"}
                     </span>
+
+                    {/* 📲 BOTÓN SOLO SI ESTA BAJO */}
+                    {(status === "warning" ||
+                      status === "danger") && (
+                      <button
+                        className="btn-alert"
+                        onClick={() =>
+                          handleSendAlert(gusto)
+                        }
+                        title="Avisar por WhatsApp"
+                      >
+                        📲
+                      </button>
+                    )}
 
                     <button
                       className="btn-edit"
