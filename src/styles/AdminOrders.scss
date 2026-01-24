@@ -283,3 +283,103 @@
   height: auto;
   margin: 8px 0 16px;
 }
+.order-shipping-input {
+  width: 90px;
+  padding: 6px 28px 6px 10px;
+
+  border-radius: 8px;
+  border: 1px solid #ff69c4;
+
+  background-color: #fff;
+
+  color: #333;
+  font-weight: 600;
+  font-size: 14px;
+
+  text-align: center;
+
+  outline: none;
+  cursor: pointer;
+
+  transition: all 0.2s ease;
+
+  /* ❌ Sacar flechas del number */
+  -moz-appearance: textfield;
+  appearance: textfield;
+
+  &::-webkit-inner-spin-button,
+  &::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  &:hover {
+    border-color: #ff2fa0;
+  }
+
+  &:focus {
+    border-color: #ff2fa0;
+    box-shadow: 0 0 0 2px rgba(255, 105, 196, 0.25);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+/* =========================
+   SHIPPING SELECT
+========================= */
+
+.shipping-select-wrapper {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.shipping-select,
+.shipping-input {
+  height: 34px;
+
+  border-radius: 8px;
+  border: 1px solid #ff69c4;
+
+  background: #fff;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  padding: 0 10px;
+
+  outline: none;
+
+  transition: all 0.2s ease;
+}
+
+/* Select */
+
+.shipping-select {
+  cursor: pointer;
+  min-width: 90px;
+}
+
+/* Input */
+
+.shipping-input {
+  width: 70px;
+  text-align: center;
+}
+
+/* Hover / Focus */
+
+.shipping-select:hover,
+.shipping-input:hover {
+  border-color: #ff2fa0;
+}
+
+.shipping-select:focus,
+.shipping-input:focus {
+  border-color: #ff2fa0;
+  box-shadow: 0 0 0 2px rgba(255, 105, 196, 0.25);
+}

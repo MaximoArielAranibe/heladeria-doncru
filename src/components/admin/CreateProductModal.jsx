@@ -3,6 +3,14 @@ import { createProduct } from "../../services/products.service";
 import { uploadProductImage } from "../../services/uploadImage.service";
 import "../../styles/CreateProductModal.scss";
 
+const SIZE_OPTIONS = [
+  "Cuarto de helado",
+  "Medio kg de helado",
+  "3/4 de helado",
+  "Kg de helado",
+];
+
+
 const INITIAL_STATE = {
   title: "",
   description: "",
@@ -34,8 +42,8 @@ const CreateProductModal = ({
     }));
   }, [defaultCategory]);
 
-/*   if (!open) return null;
- */
+  /*   if (!open) return null;
+   */
   /* =====================
      SYNC CATEGORY
   ===================== */
@@ -121,25 +129,35 @@ const CreateProductModal = ({
 
               <button onClick={onClose}>✖</button>
             </header>
-            <select
-                  name="category"
-                  value={form.category}
-                  onChange={handleChange}
-                >
-                  <option value="tamaños">Tamaños</option>
-                  <option value="postres">Postres</option>
-                </select>
+
+
 
             <form
               className="create-product-modal__form"
               onSubmit={handleSubmit}
             >
-              <input
-                name="title"
-                placeholder="Nombre (Helado 3/4 kg)"
-                value={form.title}
-                onChange={handleChange}
-              />
+              {form.category === "tamaños" ? (
+                <select
+                  name="title"
+                  value={form.title}
+                  onChange={handleChange}
+                >
+                  <option value="">Seleccionar tamaño</option>
+
+                  {SIZE_OPTIONS.map((size) => (
+                    <option key={size} value={size}>
+                      {size}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  name="title"
+                  placeholder="Nombre del postre"
+                  value={form.title}
+                  onChange={handleChange}
+                />
+              )}
 
               <textarea
                 name="description"

@@ -16,7 +16,7 @@ const CardHorizontal = ({
   imageRight = false,
   title = "",
   price = 0,
-  isFeatured = false,
+  featured = false,
   thumbnail = "",
   product,
 }) => {
@@ -97,19 +97,20 @@ const CardHorizontal = ({
         className={`
           card
           ${imageRight ? "card--reverse" : ""}
-          ${isFeatured ? "card--glass" : ""}
+          ${featured ? "card--glass" : ""}
         `}
       >
-        {isFeatured && (
-          <StarBadge className="card__badge" size={28} />
+
+
+        {product.featured && (
+          <StarBadge className="card__badge" size={32} />
         )}
 
         {/* 🔧 ADMIN PRICE EDIT */}
         {isAdmin && editingPrice && (
           <div
-            className={`card__price-edit ${
-              imageRight ? "card__price-edit--right" : ""
-            }`}
+            className={`card__price-edit ${imageRight ? "card__price-edit--right" : ""
+              }`}
           >
             <input
               type="number"

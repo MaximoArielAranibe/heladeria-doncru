@@ -272,7 +272,7 @@ const AdminOrders = () => {
       }
 
       // 🔥 NUEVO: descontar stock + validar
-      await archiveOrderWithStock({...order, archivedBy: adminName});
+      await archiveOrderWithStock({ ...order, archivedBy: adminName });
 
       // ✅ TU LÓGICA ORIGINAL (INTACTA)
 
@@ -364,17 +364,6 @@ const AdminOrders = () => {
             </header>
 
             <section className="order-card__info">
-              <p>
-                <strong>Productos:</strong> ${order.total}
-              </p>
-              <p>
-                <strong>Envío estimado:</strong>{" "}
-                {order.shipping?.estimated ?? "No informado"}
-              </p>
-              <p>
-                <strong>Envío final:</strong>{" "}
-                {order.shipping?.final ?? "Pendiente"}
-              </p>
               {order.customer?.name && (
                 <p>
                   <strong>Cliente:</strong> {order.customer.name}
@@ -383,11 +372,6 @@ const AdminOrders = () => {
               {order.customer?.direction && (
                 <p>
                   <strong>Dirección:</strong> {order.customer.direction}
-                </p>
-              )}
-              {order.customer?.direction && (
-                <p>
-                  <strong>Total con envió:</strong> {order.total + order.shipping?.final}
                 </p>
               )}
               {order.customer?.phone && (
@@ -400,6 +384,22 @@ const AdminOrders = () => {
                   >
                     {order.customer.phone}
                   </a>
+                </p>
+              )}
+              <p>
+                <strong>Productos:</strong> ${order.total}
+              </p>
+              <p>
+                <s>Envío estimado:</s>{" "}
+                {order.shipping?.estimated ?? "No informado"}
+              </p>
+              <p>
+                <strong>Envío final:</strong>{" "}
+                {order.shipping?.final ?? "Pendiente"}
+              </p>
+              {order.customer?.direction && (
+                <p>
+                  <strong>TOTAL CON ENVIÓ:</strong> {order.total + order.shipping?.final}
                 </p>
               )}
             </section>
@@ -422,18 +422,43 @@ const AdminOrders = () => {
             </ul>
 
             <footer className="order-card__actions">
-              <input
-                type="number"
-                min={0}
-                placeholder="Envío $"
-                className="order-shipping-input"
-                value={order.shipping?.final ?? ""}
-                onChange={(e) =>
-                  updateDoc(doc(db, "orders", order.id), {
-                    "shipping.final": Number(e.target.value),
-                  })
-                }
-              />
+            <div className="shipping-select-wrapper">
+  <select
+    className="shipping-select"
+    onChange={(e) =>
+      updateDoc(doc(db, "orders", order.id), {
+        "shipping.final": Number(e.target.value),
+      })
+    }
+    defaultValue=""
+  >
+    <option value="" disabled>
+      Elegir $
+    </option>
+
+    <option value="2000">$2000</option>
+    <option value="2500">$2500</option>
+    <option value="3000">$3000</option>
+    <option value="4000">$4000</option>
+    <option value="4500">$4500</option>
+    <option value="5000">$5000</option>
+  </select>
+
+  <input
+    type="number"
+    min="0"
+    placeholder="Otro $"
+    className="shipping-input"
+    value={order.shipping?.final ?? ""}
+    onChange={(e) =>
+      updateDoc(doc(db, "orders", order.id), {
+        "shipping.final": Number(e.target.value),
+      })
+    }
+  />
+</div>
+
+
 
               <button
                 className="btn btn--primary"
@@ -442,7 +467,7 @@ const AdminOrders = () => {
                   updateShipping(order, order.shipping.final)
                 }
               >
-                Mandar costo de envío
+                Enviar costo de envío
               </button>
 
               <button

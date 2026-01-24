@@ -4,12 +4,14 @@
   overflow: hidden;
 
   display: grid;
-  grid-template-columns: 1fr; /* 🔥 UNA CARD POR FILA */
-  gap: 24px;
+  grid-template-columns: 1fr;
 
-  justify-items: center; /* centra las cards horizontalmente */
+  justify-items: center;
+  justify-content: center;
+  align-content: center; /* ✅ ESTA */
   padding: 32px 16px;
 }
+
 
 /* Fondo con imagen desenfocada */
 .cards__vertical__container::before {
@@ -31,7 +33,7 @@
 }
 
 /* contenido arriba del fondo */
-.cards__vertical__container > * {
+.cards__vertical__container>* {
   position: relative;
   z-index: 2;
 }
