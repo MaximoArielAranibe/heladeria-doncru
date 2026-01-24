@@ -105,6 +105,26 @@ const AdminStock = () => {
   };
 
   /* =====================
+     TOGGLE ACTIVE
+  ===================== */
+  const toggleActive = async (gusto) => {
+    try {
+      await updateGusto(gusto.id, {
+        active: gusto.active === false ? true : false,
+      });
+
+      toast.success(
+        gusto.active === false
+          ? "Gusto habilitado 🍦"
+          : "Gusto inhabilitado 🚫"
+      );
+    } catch (error) {
+      console.error(error);
+      toast.error("Error al cambiar estado del gusto");
+    }
+  };
+
+  /* =====================
      RENDER
   ===================== */
 
@@ -162,15 +182,26 @@ const AdminStock = () => {
         {filteredGustos.map((gusto) => {
           const status = getStockStatus(gusto.weight);
           const isEditing = editingId === gusto.id;
+          const isDisabled = gusto.active === false;
 
           return (
             <div
               key={gusto.id}
-              className={`admin-stock__item ${status}`}
+              className={`admin-stock__item ${status} ${
+                isDisabled ? "disabled" : ""
+              }`}
             >
               <div className="admin-stock__info">
                 <strong>{gusto.name}</strong>
                 <span className="category">{gusto.category}</span>
+                {isDisabled && (
+                  <span
+                    className="category"
+                    style={{ color: "crimson" }}
+                  >
+                    INHABILITADO
+                  </span>
+                )}
               </div>
 
               <div className="admin-stock__weight">
@@ -188,7 +219,6 @@ const AdminStock = () => {
                   `${(gusto.weight / 1000).toFixed(2)} kg`
                 )}
               </div>
-
 
               <div className="admin-stock__actions">
                 {isEditing ? (
@@ -218,8 +248,21 @@ const AdminStock = () => {
                     <button
                       className="btn-edit"
                       onClick={() => startEdit(gusto)}
+                      title="Editar stock"
                     >
                       ✏️
+                    </button>
+
+                    <button
+                      className="btn-edit"
+                      onClick={() => toggleActive(gusto)}
+                      title={
+                        isDisabled
+                          ? "Habilitar gusto"
+                          : "Inhabilitar gusto"
+                      }
+                    >
+                      {isDisabled ? "✅" : "🚫"}
                     </button>
                   </>
                 )}

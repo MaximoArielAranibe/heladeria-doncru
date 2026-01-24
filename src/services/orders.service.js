@@ -150,22 +150,22 @@ export const getArchivedOrders = async ({
 ===================== */
 
 const getWeightFromTitle = (title = "") => {
-  const t = title.toLowerCase().replace(/\s+/g, " ");
+  const t = title.toLowerCase();
 
-  // fracciones explícitas
-  if (t.includes("1/4")) return 250;
-  if (t.includes("3/4")) return 750;
+  // 1/4
+  if (t.includes("1/4") || t.includes("cuarto")) return 250;
 
-  // medio kilo
-  if (t.includes("medio")) return 500;
-  if (t.includes("1/2")) return 500;
+  // 3/4
+  if (t.includes("3/4") || t.includes("tres cuartos")) return 750;
 
-  // 1 kg explícito
-  if (t.includes("1 kg") || t.includes("1kg")) return 1000;
+  // medio
+  if (t.includes("medio") || t.includes("1/2")) return 500;
 
-  // kg sin número → asumir 1kg
-  if (t.includes("kg")) return 1000;
+  // 1kg
+  if (t.includes("1 kg") || t.includes("1kg") || t.includes("kilo"))
+    return 1000;
 
+  // fallback
   return null;
 };
 
@@ -177,6 +177,10 @@ export const archiveOrderWithStock = async (order) => {
   const orderRef = doc(db, "orders", order.id);
 
   await runTransaction(db, async (transaction) => {
+    /* =====================
+       READS FIRST
+    ===================== */
+
     const orderSnap = await transaction.get(orderRef);
 
     if (!orderSnap.exists()) {
@@ -187,12 +191,17 @@ export const archiveOrderWithStock = async (order) => {
 
     if (orderData.archived === true) return;
 
-    if (!Array.isArray(orderData.items) || orderData.items.length === 0) {
+    if (
+      !Array.isArray(orderData.items) ||
+      orderData.items.length === 0
+    ) {
       throw new Error("Pedido sin items");
     }
 
+    // Guardamos los refs que vamos a usar
+    const gustosMap = new Map();
+
     for (const item of orderData.items) {
-      // 🧁 POSTRES O ITEMS SIN GUSTOS → NO DESCUENTAN STOCK
       if (!Array.isArray(item.gustos) || item.gustos.length === 0) {
         continue;
       }
@@ -206,6 +215,7 @@ export const archiveOrderWithStock = async (order) => {
       const weightPerGusto = totalWeight / item.gustos.length;
 
       for (const gustoName of item.gustos) {
+        // Buscar gusto por nombre
         const q = query(
           collection(db, "gustos"),
           where("name", "==", gustoName)
@@ -220,18 +230,37 @@ export const archiveOrderWithStock = async (order) => {
         const gustoDoc = snap.docs[0];
         const gustoRef = doc(db, "gustos", gustoDoc.id);
 
-        const currentWeight = gustoDoc.data().weight ?? 0;
+        // Leer dentro de la transaction
+        const gustoSnap = await transaction.get(gustoRef);
+
+        if (!gustoSnap.exists()) {
+          throw new Error(`Gusto "${gustoName}" no existe`);
+        }
+
+        const currentWeight = gustoSnap.data().weight ?? 0;
 
         if (currentWeight < weightPerGusto) {
           throw new Error(
-            `Stock insuficiente para ${gustoDoc.data().name}`
+            `Stock insuficiente para ${gustoSnap.data().name}`
           );
         }
 
-        transaction.update(gustoRef, {
-          weight: currentWeight - weightPerGusto,
+        // Guardamos para después
+        gustosMap.set(gustoRef.path, {
+          ref: gustoRef,
+          newWeight: currentWeight - weightPerGusto,
         });
       }
+    }
+
+    /* =====================
+       WRITES AFTER READS
+    ===================== */
+
+    for (const { ref, newWeight } of gustosMap.values()) {
+      transaction.update(ref, {
+        weight: newWeight,
+      });
     }
 
     transaction.update(orderRef, {
@@ -240,3 +269,4 @@ export const archiveOrderWithStock = async (order) => {
     });
   });
 };
+

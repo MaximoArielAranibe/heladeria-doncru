@@ -24,10 +24,12 @@ const SelectGustosModal = ({ product, open, onClose }) => {
   /* =====================
      TOGGLE
   ===================== */
-  const toggleGusto = (gusto) => {
+  const toggleGusto = (gustoName, isInactive) => {
+    if (isInactive) return;
+
     setSelected((prev) => {
-      if (prev.includes(gusto)) {
-        return prev.filter((g) => g !== gusto);
+      if (prev.includes(gustoName)) {
+        return prev.filter((g) => g !== gustoName);
       }
 
       if (prev.length >= maxGustos) {
@@ -35,7 +37,7 @@ const SelectGustosModal = ({ product, open, onClose }) => {
         return prev;
       }
 
-      return [...prev, gusto];
+      return [...prev, gustoName];
     });
   };
 
@@ -79,18 +81,29 @@ const SelectGustosModal = ({ product, open, onClose }) => {
             <div className="gustos-grid">
               {safeGustos.map((gusto) => {
                 const isSelected = selected.includes(gusto.name);
-                const isDisabled =
+                const isInactive =
+                  gusto.active === false || gusto.weight <= 0;
+
+                const maxReached =
                   selected.length >= maxGustos && !isSelected;
 
                 return (
                   <button
-                    key={gusto.id}
+                    key={gusto.id || gusto.name}
                     type="button"
-                    className={`gusto-option ${
-                      isSelected ? "is-selected" : ""
-                    }`}
-                    onClick={() => toggleGusto(gusto.name)}
-                    disabled={isDisabled}
+                    className={`gusto-option
+                      ${isSelected ? "is-selected" : ""}
+                      ${isInactive ? "is-disabled" : ""}
+                    `}
+                    disabled={isInactive || maxReached}
+                    onClick={() =>
+                      toggleGusto(gusto.name, isInactive)
+                    }
+                    title={
+                      isInactive
+                        ? "Gusto no disponible"
+                        : gusto.name
+                    }
                   >
                     {gusto.name}
                   </button>

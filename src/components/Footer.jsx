@@ -33,8 +33,7 @@ const Footer = () => {
           <p>📞 <a href="tel:+5492477361535">+54 9 2477-361535</a></p>
           <p>📞 <a href="tel:+5492477349023">+54 9 2477-349023</a></p>
           <p>🕒 Todos los días</p>
-          <p>☀️ <strong>12:00hs a 17:30hs</strong></p>
-          <p>🌙 <strong>19:00hs a 00:30hs</strong></p>
+          <p>☀️ <strong>10:30am a 01:30am🌙</strong></p>
         </div>
       </div>
 

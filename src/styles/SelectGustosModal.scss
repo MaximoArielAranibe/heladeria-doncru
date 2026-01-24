@@ -139,3 +139,9 @@
     grid-template-columns: repeat(4, 1fr);
   }
 }
+
+.gusto-option.is-disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  text-decoration: line-through;
+}

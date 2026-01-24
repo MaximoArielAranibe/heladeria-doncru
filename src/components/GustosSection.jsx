@@ -43,7 +43,7 @@ const GustosSection = ({ category = "todos", title }) => {
   });
 
   /* =====================
-     CREATE
+    CREATE
   ===================== */
   const [creating, setCreating] = useState(false);
   const [newGusto, setNewGusto] = useState({
@@ -375,10 +375,10 @@ const GustosSection = ({ category = "todos", title }) => {
                   {isAdmin && (
                     <span
                       className={`gusto-stock ${gusto.weight < 1000
-                          ? "danger"
-                          : gusto.weight < 3000
-                            ? "warning"
-                            : ""
+                        ? "danger"
+                        : gusto.weight < 3000
+                          ? "warning"
+                          : ""
                         }`}
                     >
                       {(gusto.weight / 1000).toFixed(2)} kg
