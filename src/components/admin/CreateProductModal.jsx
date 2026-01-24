@@ -118,8 +118,17 @@ const CreateProductModal = ({
           <div className="create-product-modal">
             <header className="create-product-modal__header">
               <h3>Nuevo producto</h3>
+
               <button onClick={onClose}>✖</button>
             </header>
+            <select
+                  name="category"
+                  value={form.category}
+                  onChange={handleChange}
+                >
+                  <option value="tamaños">Tamaños</option>
+                  <option value="postres">Postres</option>
+                </select>
 
             <form
               className="create-product-modal__form"

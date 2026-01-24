@@ -22,14 +22,14 @@ const SelectGustosModal = ({ product, open, onClose }) => {
   );
 
   /* =====================
-     TOGGLE
+     TOGGLE (USA ID)
   ===================== */
-  const toggleGusto = (gustoName, isInactive) => {
+  const toggleGusto = (gustoId, isInactive) => {
     if (isInactive) return;
 
     setSelected((prev) => {
-      if (prev.includes(gustoName)) {
-        return prev.filter((g) => g !== gustoName);
+      if (prev.includes(gustoId)) {
+        return prev.filter((g) => g !== gustoId);
       }
 
       if (prev.length >= maxGustos) {
@@ -37,7 +37,7 @@ const SelectGustosModal = ({ product, open, onClose }) => {
         return prev;
       }
 
-      return [...prev, gustoName];
+      return [...prev, gustoId];
     });
   };
 
@@ -49,7 +49,7 @@ const SelectGustosModal = ({ product, open, onClose }) => {
 
     addToCart({
       ...product,
-      gustos: selected,
+      gustos: selected, // ← IDs
     });
 
     toast.success("Producto agregado al carrito 🛒");
@@ -80,7 +80,8 @@ const SelectGustosModal = ({ product, open, onClose }) => {
           ) : (
             <div className="gustos-grid">
               {safeGustos.map((gusto) => {
-                const isSelected = selected.includes(gusto.name);
+                const isSelected = selected.includes(gusto.id);
+
                 const isInactive =
                   gusto.active === false || gusto.weight <= 0;
 
@@ -89,7 +90,7 @@ const SelectGustosModal = ({ product, open, onClose }) => {
 
                 return (
                   <button
-                    key={gusto.id || gusto.name}
+                    key={gusto.id}
                     type="button"
                     className={`gusto-option
                       ${isSelected ? "is-selected" : ""}
@@ -97,7 +98,7 @@ const SelectGustosModal = ({ product, open, onClose }) => {
                     `}
                     disabled={isInactive || maxReached}
                     onClick={() =>
-                      toggleGusto(gusto.name, isInactive)
+                      toggleGusto(gusto.id, isInactive)
                     }
                     title={
                       isInactive

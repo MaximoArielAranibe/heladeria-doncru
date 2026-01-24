@@ -5,6 +5,7 @@ import CartItem from "../components/CartItem";
 import { createOrder } from "../services/orders.service";
 import { normalizePhoneAR, isValidPhoneAR } from "../utils/phone";
 import "../styles/Carrito.scss";
+import { useGustos } from "../hooks/useGustos";
 
 const BUSINESS_PHONE = "5492477361535";
 
@@ -27,12 +28,20 @@ const Carrito = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderSent, setOrderSent] = useState(false);
   const [phoneError, setPhoneError] = useState("");
+  const { gustos } = useGustos();
+
+
 
   const nameRef = useRef("");
   const directionRef = useRef("");
   const phoneRef = useRef("");
 
   const [zone, setZone] = useState("centro");
+
+  const getGustoName = (id) => {
+    return gustos.find((g) => g.id === id)?.name || "Desconocido";
+  };
+
 
   useEffect(() => {
     const handleEsc = (e) => e.key === "Escape" && setIsModalOpen(false);
@@ -57,30 +66,36 @@ const Carrito = () => {
   const buildWhatsappMessage = (orderId) => {
     const items = cart
       .map((item) => {
-        const gustosText =
-          item.gustos?.length ? ` (${item.gustos.join(", ")})` : "";
+        const gustosText = item.gustos?.length
+          ? ` (${item.gustos
+              .map((id) => getGustoName(id))
+              .join(", ")})`
+          : "";
+
         return `- ${item.title} x${item.quantity}${gustosText}`;
       })
       .join("\n");
 
     return `
-*Pedido ID:* ${orderId}
+  *Pedido ID:* ${orderId}
 
-Hola! Soy *${nameRef.current}* 👋
+  Hola! Soy *${nameRef.current}* 👋
 
-Dirección: *${directionRef.current}*
-Zona: *${SHIPPING_ZONES[zone].label}*
+  Dirección: *${directionRef.current}*
+  Zona: *${SHIPPING_ZONES[zone].label}*
 
-*Pedido:*
-${items}
+  *Pedido:*
+  ${items}
 
-Productos: $${total}
-Envío estimado: ${shippingEstimated !== null ? `$${shippingEstimated}` : "A confirmar"
-      }
+  Productos: $${total}
+  Envío estimado: ${
+      shippingEstimated !== null ? `$${shippingEstimated}` : "A confirmar"
+    }
 
-*El costo de envío te lo confirmamos en breve!!*
+  *El costo de envío te lo confirmamos en breve!!*
     `.trim();
   };
+
 
   const handleConfirm = async () => {
     if (isSubmitting) return;

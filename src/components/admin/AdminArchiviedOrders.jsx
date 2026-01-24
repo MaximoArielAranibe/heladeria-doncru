@@ -1,6 +1,8 @@
 import "../../styles/AdminOrders.scss";
 import { useState, useCallback, useEffect } from "react";
 import { getArchivedOrders } from "../../services/orders.service";
+import { useGustos } from "../../hooks/useGustos";
+
 
 const PAGE_SIZE = 10;
 
@@ -8,6 +10,8 @@ const AdminArchivedOrders = () => {
   const [orders, setOrders] = useState([]);
   const [lastDoc, setLastDoc] = useState(null);
   const [loading, setLoading] = useState(false);
+  const { gustos: allGustos } = useGustos();
+
 
   // null = sin filtro (ver todos)
   const [dateFilter, setDateFilter] = useState(null);
@@ -16,6 +20,11 @@ const AdminArchivedOrders = () => {
   const [dateDraft, setDateDraft] = useState("");
 
   const [hasFetched, setHasFetched] = useState(false);
+
+  const getGustoName = (id) => {
+    const found = allGustos.find((g) => g.id === id);
+    return found?.name || "—";
+  };
 
   const fetchOrders = useCallback(
     async ({ reset = false } = {}) => {
@@ -129,9 +138,13 @@ const AdminArchivedOrders = () => {
 
                 {item.gustos?.length > 0 && (
                   <div className="archived-gustos">
-                    🍦 Gustos: {item.gustos.join(", ")}
+                    🍦 Gustos:{" "}
+                    {item.gustos
+                      .map((id) => getGustoName(id))
+                      .join(", ")}
                   </div>
                 )}
+
               </li>
             ))}
           </ul>

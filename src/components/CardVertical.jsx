@@ -4,7 +4,7 @@ import Button from "./Button.jsx";
 import StarBadge from "./StarBadge.jsx";
 import SelectGustosModal from "./SelectGustosModal";
 import { useAuth } from "../hooks/useAuth";
-import { updateProductPrice } from "../services/products.service";
+import { updateProductPrice, deleteProduct } from "../services/products.service";
 import toast from "react-hot-toast";
 
 const CardVertical = ({ product }) => {
@@ -15,8 +15,28 @@ const CardVertical = ({ product }) => {
   const [editingPrice, setEditingPrice] = useState(false);
   const [localPrice, setLocalPrice] = useState(product?.price ?? 0);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   if (!product) return null;
+
+  const handleDelete = async () => {
+    if (!product?.id) return;
+
+    const confirmed = window.confirm(`¿Eliminar "${product.title}"?\nEsta acción no se puede deshacer.`)
+
+    if (!confirmed) return;
+
+    try {
+      setDeleting(true);
+      await deleteProduct(product.id);
+      toast.success("Producto eliminado 🗑️");
+    } catch (error) {
+      console.error(error);
+      toast.error("Errorr al eliminar producto");
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   const handleSavePrice = async () => {
     try {
@@ -83,15 +103,26 @@ const CardVertical = ({ product }) => {
               ${Number(product.price).toLocaleString()}
             </p>
           )}
-
           {isAdmin && !editingPrice && (
-            <button
-              className="card-v__edit-price-btn"
-              onClick={() => setEditingPrice(true)}
-            >
-              ✏️ Editar precio
-            </button>
+            <>
+              <button
+                className="card-v__edit-price-btn"
+                onClick={() => setEditingPrice(true)}
+              >
+                ✏️ Editar precio
+              </button>
+
+              <button
+                className="card__delete-icon"
+                onClick={handleDelete}
+                disabled={deleting}
+                title="Eliminar producto"
+              >
+                🗑️
+              </button>
+            </>
           )}
+
 
           <Button
             text="Comprar ahora"

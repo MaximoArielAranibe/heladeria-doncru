@@ -1,9 +1,24 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import toast from "react-hot-toast";
 import "../styles/CartItem.scss";
+import { useGustos } from "../hooks/useGustos";
 
 const CartItem = ({ item, onRemove, onUpdateQuantity }) => {
   const { cartId, title, price, gustos = [], quantity = 1 } = item;
+
+  const { gustos: allGustos } = useGustos();
+
+  /* =====================
+     MAP ID → NAME
+  ===================== */
+  const gustoNames = useMemo(() => {
+    if (!Array.isArray(gustos)) return [];
+
+    return gustos.map((id) => {
+      const found = allGustos.find((g) => g.id === id);
+      return found?.name || "—";
+    });
+  }, [gustos, allGustos]);
 
   const startX = useRef(0);
   const currentX = useRef(0);
@@ -56,7 +71,7 @@ const CartItem = ({ item, onRemove, onUpdateQuantity }) => {
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        {/* BOTÓN X (DESKTOP) */}
+        {/* BOTÓN X */}
         <button
           className="cart-item__remove"
           aria-label="Eliminar producto"
@@ -69,8 +84,10 @@ const CartItem = ({ item, onRemove, onUpdateQuantity }) => {
         <div className="cart-item__info">
           <h4 className="cart-item__title">{title}</h4>
 
-          {gustos.length > 0 && (
-            <p className="cart-item__flavors">{gustos.join(", ")}</p>
+          {gustoNames.length > 0 && (
+            <p className="cart-item__flavors">
+              {gustoNames.join(", ")}
+            </p>
           )}
         </div>
 
@@ -86,7 +103,9 @@ const CartItem = ({ item, onRemove, onUpdateQuantity }) => {
 
             <span>{quantity}</span>
 
-            <button onClick={() => onUpdateQuantity(cartId, quantity + 1)}>
+            <button
+              onClick={() => onUpdateQuantity(cartId, quantity + 1)}
+            >
               +
             </button>
           </div>

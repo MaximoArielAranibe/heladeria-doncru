@@ -16,6 +16,8 @@ import { deleteDoc } from "firebase/firestore";
 import { archiveOrderWithStock } from "../../services/orders.service.js";
 import toast from "react-hot-toast";
 
+import { useGustos } from "../../hooks/useGustos.js";
+
 
 /* =====================
   EMOJIS (UNICODE SAFE)
@@ -116,6 +118,7 @@ const AdminOrders = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
   const [fetchError, setFetchError] = useState(null);
+  const { gustos: allGustos } = useGustos()
 
   const orderEvents = useOrderEvents();
   const isSubscribedRef = useRef(false);
@@ -147,7 +150,10 @@ const AdminOrders = () => {
     }
   }, []);
 
-
+  const getGustoName = (id) => {
+    const found = allGustos.find((g) => g.id === id);
+    return found?.name || "—";
+  };
 
   /* =====================
      FIRESTORE LISTENER
@@ -266,14 +272,9 @@ const AdminOrders = () => {
       }
 
       // 🔥 NUEVO: descontar stock + validar
-      await archiveOrderWithStock(order);
+      await archiveOrderWithStock({...order, archivedBy: adminName});
 
       // ✅ TU LÓGICA ORIGINAL (INTACTA)
-      await updateDoc(doc(db, "orders", orderId), {
-        archived: true,
-        archivedAt: serverTimestamp(),
-        archivedBy: adminName,
-      });
 
       await logOrderEvent({
         orderId,
@@ -407,9 +408,15 @@ const AdminOrders = () => {
               {order.items?.map((item, idx) => (
                 <li key={idx}>
                   {item.title} x{item.quantity}
-                  {item.gustos?.length
-                    ? ` (${item.gustos.join(", ")})`
-                    : ""}
+                  {item.gustos?.length > 0 && (
+                    <div className="archived-gustos">
+                      🍦 Gustos:{" "}
+                      {item.gustos
+                        .map((id) => getGustoName(id))
+                        .join(", ")}
+                    </div>
+                  )}
+
                 </li>
               ))}
             </ul>
