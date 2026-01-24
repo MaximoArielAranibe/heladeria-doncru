@@ -22,8 +22,12 @@ import Orders from "./components/admin/Orders.jsx";
 import AdminArchivedOrders from "./components/admin/AdminArchiviedOrders.jsx";
 import AdminStock from "./components/admin/AdminStock.jsx";
 import Postres from "./pages/Postres.jsx";
+import { useAuth } from "./hooks/useAuth.js";
 
 function App() {
+  const { role } = useAuth();
+  const isAdmin = role === "admin";
+
 
   return (
     <CartProvider>
@@ -31,7 +35,7 @@ function App() {
         <BrowserRouter>
           <ScrollToTop />
           <Navbar />
-          {<WhatsAppButton />}
+          {isAdmin && <WhatsAppButton />}
 
           <Routes>
             {/* ===================== PUBLIC ===================== */}
