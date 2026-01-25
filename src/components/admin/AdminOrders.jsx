@@ -15,8 +15,8 @@ import { useOrderEvents } from "../../hooks/useOrderEvents.js";
 import { deleteDoc } from "firebase/firestore";
 import { archiveOrderWithStock } from "../../services/orders.service.js";
 import toast from "react-hot-toast";
-
 import { useGustos } from "../../hooks/useGustos.js";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 
 /* =====================
   EMOJIS
@@ -111,7 +111,7 @@ const AdminOrders = () => {
   const { gustos: allGustos } = useGustos();
 
   const orderEvents = useOrderEvents();
-  const isSubscribedRef = useRef(false);
+  const _isSubscribedRef = useRef(false);
 
   const audioRef = useRef(null);
   const previousCountRef = useRef(0);
@@ -120,7 +120,7 @@ const AdminOrders = () => {
      FALLBACK LOAD
   ===================== */
 
-  const loadWithFallback = useCallback(async (unsubscribeFn) => {
+  const _loadWithFallback = useCallback(async (unsubscribeFn) => {
     try {
       const colRef = collection(db, "orders");
       const snap = await getDocs(colRef);
@@ -155,48 +155,56 @@ const AdminOrders = () => {
   ===================== */
 
   useEffect(() => {
-    if (isSubscribedRef.current) return;
+    const auth = getAuth();
 
-    isSubscribedRef.current = true;
+    let unsubscribeOrders = null;
 
-    const colRef = collection(db, "orders");
-
-    const unsubscribe = onSnapshot(
-      colRef,
-
-      (snapshot) => {
-        const data = snapshot.docs.map((d) => ({
-          id: d.id,
-          ...d.data(),
-        }));
-
-        if (
-          previousCountRef.current > 0 &&
-          data.length > previousCountRef.current
-        ) {
-          audioRef.current?.play().catch(() => {});
-        }
-
-        previousCountRef.current = data.length;
-
-        setOrders(data);
-        setLoading(false);
-        setFetchError(null);
-      },
-
-      (error) => {
-        console.error("onSnapshot error:", error);
-
-        setFetchError(error?.message || "Error al suscribirse");
-        loadWithFallback(unsubscribe);
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        console.log("AdminOrders: usuario no autenticado");
+        return;
       }
-    );
+
+      console.log("AdminOrders: auth OK →", user.uid);
+
+      const colRef = collection(db, "orders");
+
+      unsubscribeOrders = onSnapshot(
+        colRef,
+
+        (snapshot) => {
+          const data = snapshot.docs.map((d) => ({
+            id: d.id,
+            ...d.data(),
+          }));
+
+          if (
+            previousCountRef.current > 0 &&
+            data.length > previousCountRef.current
+          ) {
+            audioRef.current?.play().catch(() => { });
+          }
+
+          previousCountRef.current = data.length;
+
+          setOrders(data);
+          setLoading(false);
+          setFetchError(null);
+        },
+
+        (error) => {
+          console.error("onSnapshot error:", error);
+
+          setFetchError(error?.message || "Error al suscribirse");
+        }
+      );
+    });
 
     return () => {
-      unsubscribe();
-      isSubscribedRef.current = false;
+      if (unsubscribeOrders) unsubscribeOrders();
+      unsubscribeAuth();
     };
-  }, [loadWithFallback]);
+  }, []);
 
   /* =====================
      ACTIONS
@@ -259,11 +267,12 @@ const AdminOrders = () => {
         buildShippingMessage(order, value)
       );
 
-      setShippingDraft((prev) => {
-        const copy = { ...prev };
-        delete copy[order.id];
-        return copy;
-      });
+      setShippingDraft((prev) => ({
+        ...prev,
+        [order.id]: value,
+      }));
+
+
 
       toast.success("Costo enviado 🚚");
     } catch (error) {
@@ -423,7 +432,7 @@ const AdminOrders = () => {
                   type="number"
                   min="0"
                   placeholder="Otro $"
-                  value={shippingDraft[order.id] ?? ""}
+                  value={shippingDraft[order.id] ?? order.shipping?.final ?? ""}
                   onChange={(e) =>
                     setShippingDraft((prev) => ({
                       ...prev,

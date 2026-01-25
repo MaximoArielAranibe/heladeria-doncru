@@ -155,18 +155,33 @@ const getWeightFromTitle = (title = "") => {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
 
+  // 1/4 kg
   if (t.includes("1/4") || t.includes("cuarto")) return 250;
 
+  // 1/2 kg
+  if (t.includes("1/2") || t.includes("medio")) return 500;
+
+  // 3/4 kg
   if (t.includes("3/4") || t.includes("tres cuartos")) return 750;
 
-  if (t.includes("medio") || t.includes("1/2")) return 500;
-
+  // 1 kg
   if (
     t.includes("1 kg") ||
     t.includes("1kg") ||
-    t.includes("kilo")
-  )
+    t.includes("kilo") ||
+    t.includes("kg de") ||
+    t.includes("kg ") ||
+    t === "kg" ||
+    t.includes("1 kilo")
+  ) {
     return 1000;
+  }
+
+  // Detectar números tipo "500g"
+  const gramsMatch = t.match(/(\d+)\s*g/);
+  if (gramsMatch) {
+    return Number(gramsMatch[1]);
+  }
 
   return null;
 };

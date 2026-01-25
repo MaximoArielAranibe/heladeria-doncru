@@ -69,6 +69,10 @@
 ===================== */
 
 @media (max-width: 768px) {
+
+  .admin-content{
+    padding: 32px;
+  }
   .admin-layout {
     grid-template-columns: 1fr;
   }
@@ -87,5 +91,12 @@
 
   .admin-main {
     padding-bottom: 64px;
+  }
+}
+
+
+@media (min-width: 768px){
+  .admin-content{
+    padding: 32px;
   }
 }
