@@ -18,9 +18,8 @@ import toast from "react-hot-toast";
 
 import { useGustos } from "../../hooks/useGustos.js";
 
-
 /* =====================
-  EMOJIS (UNICODE SAFE)
+  EMOJIS
 ===================== */
 
 const EMOJI = {
@@ -44,7 +43,6 @@ const STATUS_LABELS = {
   cancelled: "Cancelado",
 };
 
-
 const deleteOrder = async (orderId) => {
   try {
     await deleteDoc(doc(db, "orders", orderId));
@@ -55,15 +53,6 @@ const deleteOrder = async (orderId) => {
     });
   } catch (error) {
     console.error("deleteOrder error:", error);
-  }
-};
-
-const _handleArchive = async (order) => {
-  try {
-    await archiveOrderWithStock(order);
-    toast.success("Pedido archivado y stock descontado 🍦");
-  } catch (error) {
-    toast.error(error.message);
   }
 };
 
@@ -111,41 +100,47 @@ const buildInTransitMessage = (order) =>
   COMPONENT
 ===================== */
 
-
-
 const AdminOrders = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
   const [fetchError, setFetchError] = useState(null);
-  const { gustos: allGustos } = useGustos()
+
+  const [shippingDraft, setShippingDraft] = useState({});
+
+  const { gustos: allGustos } = useGustos();
 
   const orderEvents = useOrderEvents();
   const isSubscribedRef = useRef(false);
 
-  // 🔊 AUDIO (COMO ANTES)
   const audioRef = useRef(null);
   const previousCountRef = useRef(0);
+
+  /* =====================
+     FALLBACK LOAD
+  ===================== */
 
   const loadWithFallback = useCallback(async (unsubscribeFn) => {
     try {
       const colRef = collection(db, "orders");
       const snap = await getDocs(colRef);
-      const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+
+      const docs = snap.docs.map((d) => ({
+        id: d.id,
+        ...d.data(),
+      }));
+
       setOrders(docs);
       setLoading(false);
       setFetchError(null);
 
       if (typeof unsubscribeFn === "function") {
-        try {
-          unsubscribeFn();
-        } catch (e) {
-          console.error(e);
-        }
+        unsubscribeFn();
       }
     } catch (err) {
       console.error("Fallback getDocs failed:", err);
-      setFetchError(err?.message || "Error desconocido al leer pedidos");
+
+      setFetchError(err?.message || "Error al leer pedidos");
       setLoading(false);
     }
   }, []);
@@ -156,30 +151,30 @@ const AdminOrders = () => {
   };
 
   /* =====================
-     FIRESTORE LISTENER
+     LISTENER
   ===================== */
 
   useEffect(() => {
     if (isSubscribedRef.current) return;
+
     isSubscribedRef.current = true;
 
     const colRef = collection(db, "orders");
-    const q = colRef;
 
     const unsubscribe = onSnapshot(
-      q,
+      colRef,
+
       (snapshot) => {
         const data = snapshot.docs.map((d) => ({
           id: d.id,
           ...d.data(),
         }));
 
-        // 🔊 AUDIO NUEVO PEDIDO (IGUAL QUE ANTES)
         if (
           previousCountRef.current > 0 &&
           data.length > previousCountRef.current
         ) {
-          audioRef.current?.play().catch(() => { });
+          audioRef.current?.play().catch(() => {});
         }
 
         previousCountRef.current = data.length;
@@ -188,19 +183,17 @@ const AdminOrders = () => {
         setLoading(false);
         setFetchError(null);
       },
+
       (error) => {
         console.error("onSnapshot error:", error);
-        setFetchError(error?.message || "Error al suscribirse a pedidos");
+
+        setFetchError(error?.message || "Error al suscribirse");
         loadWithFallback(unsubscribe);
       }
     );
 
     return () => {
-      try {
-        unsubscribe();
-      } catch (e) {
-        console.error(e);
-      }
+      unsubscribe();
       isSubscribedRef.current = false;
     };
   }, [loadWithFallback]);
@@ -211,7 +204,9 @@ const AdminOrders = () => {
 
   const updateStatus = async (order, status) => {
     try {
-      await updateDoc(doc(db, "orders", order.id), { status });
+      await updateDoc(doc(db, "orders", order.id), {
+        status,
+      });
 
       await logOrderEvent({
         orderId: order.id,
@@ -231,21 +226,26 @@ const AdminOrders = () => {
         await updateDoc(doc(db, "orders", order.id), {
           status: "completed",
           completedAt: serverTimestamp(),
-          createdAt: serverTimestamp(),
-          archived: false,
         });
       }
     } catch (error) {
       console.error("updateStatus error:", error);
+      toast.error("Error al actualizar estado");
     }
   };
 
-  const updateShipping = async (order, value) => {
-    if (!value || value <= 0) return;
+  const updateShipping = async (order) => {
+    const value = shippingDraft[order.id];
+
+    if (!value || value <= 0) {
+      toast.error("Ingresá un monto válido");
+      return;
+    }
 
     try {
       await updateDoc(doc(db, "orders", order.id), {
         "shipping.final": value,
+        updatedAt: serverTimestamp(),
       });
 
       await logOrderEvent({
@@ -258,46 +258,55 @@ const AdminOrders = () => {
         order.customer?.phone,
         buildShippingMessage(order, value)
       );
+
+      setShippingDraft((prev) => {
+        const copy = { ...prev };
+        delete copy[order.id];
+        return copy;
+      });
+
+      toast.success("Costo enviado 🚚");
     } catch (error) {
       console.error("updateShipping error:", error);
+      toast.error("No se pudo actualizar el envío");
     }
   };
+
   const archiveOrder = async (orderId, adminName = "Admin") => {
     try {
-      // 🔥 NUEVO: buscar el pedido actual
       const order = orders.find((o) => o.id === orderId);
 
       if (!order) {
         throw new Error("Pedido no encontrado");
       }
 
-      // 🔥 NUEVO: descontar stock + validar
-      await archiveOrderWithStock({ ...order, archivedBy: adminName });
-
-      // ✅ TU LÓGICA ORIGINAL (INTACTA)
+      await archiveOrderWithStock({
+        ...order,
+        archivedBy: adminName,
+      });
 
       await logOrderEvent({
         orderId,
         type: "ORDER_ARCHIVED",
-        meta: {
-          archivedBy: adminName,
-        },
+        meta: { archivedBy: adminName },
       });
 
-      toast.success("Pedido archivado y stock descontado 🍦");
+      toast.success("Pedido archivado 🍦");
     } catch (error) {
       console.error("archiveOrder error:", error);
-      toast.error(error.message || "Error al archivar pedido");
+      toast.error("Error al archivar pedido");
     }
   };
 
+  /* =====================
+     FILTER
+  ===================== */
 
   const filteredOrders =
     (filter === "all"
       ? orders
       : orders.filter((o) => o.status === filter)
     ).filter((o) => !o.archived);
-
 
   /* =====================
      RENDER
@@ -309,20 +318,12 @@ const AdminOrders = () => {
 
   return (
     <main className="admin-orders">
-      {/* 🔊 AUDIO NUEVO PEDIDO (COMO ANTES) */}
-      <audio
-        ref={audioRef}
-        src="/sounds/new-order.wav"
-        preload="auto"
-      />
+      <audio ref={audioRef} src="/sounds/new-order.wav" preload="auto" />
 
       <header className="admin-orders__header">
         <h2>Pedidos</h2>
 
-        <div
-          className="admin-orders__controls"
-          style={{ display: "flex", gap: 8, alignItems: "center" }}
-        >
+        <div className="admin-orders__controls">
           <select
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
@@ -336,18 +337,7 @@ const AdminOrders = () => {
 
           {fetchError && (
             <div style={{ color: "crimson", fontSize: 13 }}>
-              Error al cargar: {fetchError}
-              <button
-                className="btn btn--secondary"
-                style={{ marginLeft: 8 }}
-                onClick={() => {
-                  setLoading(true);
-                  setFetchError(null);
-                  isSubscribedRef.current = false;
-                }}
-              >
-                Reintentar
-              </button>
+              Error: {fetchError}
             </div>
           )}
         </div>
@@ -358,116 +348,97 @@ const AdminOrders = () => {
           <article key={order.id} className="order-card">
             <header className="order-card__header">
               <strong>Pedido #{order.id.slice(0, 6)}</strong>
-              <span className={`order-status order-status--${order.status}`}>
+
+              <span
+                className={`order-status order-status--${order.status}`}
+              >
                 {STATUS_LABELS[order.status]}
               </span>
             </header>
 
             <section className="order-card__info">
-              {order.customer?.name && (
-                <p>
-                  <strong>Cliente:</strong> {order.customer.name}
-                </p>
-              )}
-              {order.customer?.direction && (
-                <p>
-                  <strong>Dirección:</strong> {order.customer.direction}
-                </p>
-              )}
-              {order.customer?.phone && (
-                <p>
-                  <strong>Teléfono:</strong>{" "}
-                  <a
-                    href={`https://wa.me/${order.customer.phone}`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {order.customer.phone}
-                  </a>
-                </p>
-              )}
+              <p>
+                <strong>Cliente:</strong> {order.customer?.name}
+              </p>
+
+              <p>
+                <strong>Dirección:</strong> {order.customer?.direction}
+              </p>
+
+              <p>
+                <strong>Teléfono:</strong> {order.customer?.phone}
+              </p>
+
               <p>
                 <strong>Productos:</strong> ${order.total}
               </p>
+
               <p>
-                <s>Envío estimado:</s>{" "}
-                {order.shipping?.estimated ?? "No informado"}
-              </p>
-              <p>
-                <strong>Envío final:</strong>{" "}
+                <strong>Envío:</strong>{" "}
                 {order.shipping?.final ?? "Pendiente"}
               </p>
-              {order.customer?.direction && (
-                <p>
-                  <strong>TOTAL CON ENVIÓ:</strong> {order.total + order.shipping?.final}
-                </p>
-              )}
             </section>
 
             <ul className="order-card__items">
               {order.items?.map((item, idx) => (
                 <li key={idx}>
                   {item.title} x{item.quantity}
+
                   {item.gustos?.length > 0 && (
-                    <div className="archived-gustos">
-                      🍦 Gustos:{" "}
+                    <div>
+                      🍦{" "}
                       {item.gustos
                         .map((id) => getGustoName(id))
                         .join(", ")}
                     </div>
                   )}
-
                 </li>
               ))}
             </ul>
 
             <footer className="order-card__actions">
-            <div className="shipping-select-wrapper">
-  <select
-    className="shipping-select"
-    onChange={(e) =>
-      updateDoc(doc(db, "orders", order.id), {
-        "shipping.final": Number(e.target.value),
-      })
-    }
-    defaultValue=""
-  >
-    <option value="" disabled>
-      Costo envio
-    </option>
+              <div className="shipping-select-wrapper">
+                <select
+                  value={shippingDraft[order.id] ?? ""}
+                  onChange={(e) =>
+                    setShippingDraft((prev) => ({
+                      ...prev,
+                      [order.id]: Number(e.target.value),
+                    }))
+                  }
+                >
+                  <option value="" disabled>
+                    Costo envío
+                  </option>
 
-    <option value="2000">$2000</option>
-    <option value="2500">$2500</option>
-    <option value="3000">$3000</option>
-    <option value="4000">$4000</option>
-    <option value="4500">$4500</option>
-    <option value="5000">$5000</option>
-  </select>
+                  <option value={2000}>$2000</option>
+                  <option value={2500}>$2500</option>
+                  <option value={3000}>$3000</option>
+                  <option value={4000}>$4000</option>
+                  <option value={4500}>$4500</option>
+                  <option value={5000}>$5000</option>
+                </select>
 
-  <input
-    type="number"
-    min="0"
-    placeholder="Otro $"
-    className="shipping-input"
-    value={order.shipping?.final ?? ""}
-    onChange={(e) =>
-      updateDoc(doc(db, "orders", order.id), {
-        "shipping.final": Number(e.target.value),
-      })
-    }
-  />
-</div>
-
-
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="Otro $"
+                  value={shippingDraft[order.id] ?? ""}
+                  onChange={(e) =>
+                    setShippingDraft((prev) => ({
+                      ...prev,
+                      [order.id]: Number(e.target.value),
+                    }))
+                  }
+                />
+              </div>
 
               <button
                 className="btn btn--primary"
-                disabled={!order.shipping?.final}
-                onClick={() =>
-                  updateShipping(order, order.shipping.final)
-                }
+                disabled={!shippingDraft[order.id]}
+                onClick={() => updateShipping(order)}
               >
-                Enviar costo de envío
+                Enviar costo
               </button>
 
               <button
@@ -479,7 +450,7 @@ const AdminOrders = () => {
 
               <button
                 className="btn btn--whatsapp"
-                disabled={!order.shipping?.final}
+                disabled={!shippingDraft[order.id]}
                 onClick={() => updateStatus(order, "in_transit")}
               >
                 En camino 🚚
@@ -491,14 +462,6 @@ const AdminOrders = () => {
               >
                 Completado
               </button>
-              {/*
-              <button
-                className="btn btn--danger"
-                onClick={() => updateStatus(order, "cancelled")}
-              >
-                Cancelar
-              </button> */}
-
 
               {order.status === "completed" && (
                 <button
@@ -509,29 +472,12 @@ const AdminOrders = () => {
                 </button>
               )}
 
-
-              <button
-                className="btn"
-                onClick={() =>
-                  sendWhatsAppMessage(
-                    order.customer?.phone,
-                    buildShippingMessage(
-                      order,
-                      order.shipping?.final ?? 0
-                    )
-                  )
-                }
-              >
-                WhatsApp
-              </button>
               <button
                 className="order-delete-btn"
                 onClick={() => deleteOrder(order.id)}
               >
                 ✖
               </button>
-
-
             </footer>
 
             <aside>
