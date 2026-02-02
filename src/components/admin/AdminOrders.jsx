@@ -183,7 +183,7 @@ const AdminOrders = () => {
     if (filter === "all" && orders.length > 0) {
       setNewOrders(0);
     }
-  }, [filter, orders.length]);
+  }, [filter, orders]);
 
 
   /* =====================
