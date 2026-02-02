@@ -148,12 +148,18 @@
 /* =====================
    ACTIONS
 ===================== */
-
 .order-card__actions {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+
+  align-items: center;
+
+  border-top: 1px solid #f1f5f9;
+  padding-top: 10px;
+  margin-top: 6px;
 }
+
 
 /* =====================
    BUTTONS
@@ -480,4 +486,27 @@
   outline: none;
   border-color: #22c55e;
   box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.25);
+}
+.order-date {
+  font-size: 11px;
+  color: #64748b;
+  margin-left: auto;
+}
+
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 3px solid #e5e7eb;
+  border-top: 3px solid #22c55e;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
+  margin-right: 6px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
