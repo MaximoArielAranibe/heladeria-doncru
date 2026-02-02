@@ -20,7 +20,7 @@ import { getOrCreateUserId } from "../utils/user.js";
    CREATE ORDER
 ===================== */
 
-export const createOrder = async ({ cart, total, customer, shipping }) => {
+export const createOrder = async ({ cart, total, customer, shipping, comments }) => {
   const userId = getOrCreateUserId();
 
   const order = {
@@ -39,6 +39,7 @@ export const createOrder = async ({ cart, total, customer, shipping }) => {
       final: null,
       zone: shipping?.zone ?? null,
     },
+    comments: comments?.trim() || "",
     status: "pending",
     customer,
     createdAt: serverTimestamp(),

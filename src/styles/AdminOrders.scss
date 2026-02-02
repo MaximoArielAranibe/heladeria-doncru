@@ -384,3 +384,61 @@
   box-shadow: 0 0 0 2px rgba(255, 105, 196, 0.25);
 }
 
+/* =========================
+   SHIPPING STATUS
+========================= */
+
+.order-shipping {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  font-size: 14px;
+}
+
+/* Enviado */
+
+.shipping-sent {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+
+  padding: 3px 8px;
+  border-radius: 999px;
+
+  background: #dcfce7; // verde claro
+  color: #166534; // verde oscuro
+
+  font-weight: 700;
+  font-size: 12px;
+}
+
+/* Pendiente */
+
+.shipping-pending {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+
+  padding: 3px 8px;
+  border-radius: 999px;
+
+  background: #fef9c3; // amarillo claro
+  color: #854d0e; // amarillo oscuro
+
+  font-weight: 700;
+  font-size: 12px;
+}
+
+/* Fecha de envío (si la usás después) */
+
+.shipping-date {
+  font-size: 11px;
+  color: #64748b;
+  margin-left: 4px;
+}
+
+.order-status--cost_send {
+  background: #e0f2fe; // celeste claro
+  color: #0369a1; // azul fuerte
+}

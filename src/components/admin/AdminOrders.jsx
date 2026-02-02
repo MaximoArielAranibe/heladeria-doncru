@@ -7,7 +7,7 @@ import {
   getDocs,
   serverTimestamp,
 } from "firebase/firestore";
-import { db } from "../../firebase/firebase";
+import { auth, db } from "../../firebase/firebase";
 import "../../styles/AdminOrders.scss";
 import { logOrderEvent } from "../helper/logOrderEvent.jsx";
 import OrderHistory from "./OrderHistory";
@@ -38,10 +38,15 @@ const EMOJI = {
 
 const STATUS_LABELS = {
   pending: "Pendiente",
+  cost_send: "Costo enviado",
   in_transit: "En camino",
   completed: "Completado",
   cancelled: "Cancelado",
 };
+
+const hasShippingFinal = (order) =>
+  typeof order.shipping?.final === "number" && order.shipping.final > 0;
+
 
 const deleteOrder = async (orderId) => {
   try {
@@ -105,11 +110,8 @@ const AdminOrders = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
   const [fetchError, setFetchError] = useState(null);
-
   const [shippingDraft, setShippingDraft] = useState({});
-
   const { gustos: allGustos } = useGustos();
-
   const orderEvents = useOrderEvents();
   const _isSubscribedRef = useRef(false);
 
@@ -165,7 +167,6 @@ const AdminOrders = () => {
         return;
       }
 
-      console.log("AdminOrders: auth OK →", user.uid);
 
       const colRef = collection(db, "orders");
 
@@ -175,6 +176,7 @@ const AdminOrders = () => {
         (snapshot) => {
           const data = snapshot.docs.map((d) => ({
             id: d.id,
+            comments: "",
             ...d.data(),
           }));
 
@@ -251,15 +253,26 @@ const AdminOrders = () => {
     }
 
     try {
+      const currentUser = auth.currentUser;
+
       await updateDoc(doc(db, "orders", order.id), {
         "shipping.final": value,
+        "shipping.sentBy": currentUser?.email || "Admin",
+        "shipping.sentAt": serverTimestamp(),
+
+        // ✅ CAMBIAMOS EL STATUS
+        status: "cost_send",
+
         updatedAt: serverTimestamp(),
       });
 
       await logOrderEvent({
         orderId: order.id,
         type: "SHIPPING_ADJUSTED",
-        meta: { to: value },
+        meta: {
+          to: value,
+          by: currentUser?.email || "Admin",
+        },
       });
 
       sendWhatsAppMessage(
@@ -272,14 +285,14 @@ const AdminOrders = () => {
         [order.id]: value,
       }));
 
-
-
       toast.success("Costo enviado 🚚");
+
     } catch (error) {
       console.error("updateShipping error:", error);
       toast.error("No se pudo actualizar el envío");
     }
   };
+
 
   const archiveOrder = async (orderId, adminName = "Admin") => {
     try {
@@ -382,10 +395,31 @@ const AdminOrders = () => {
                 <strong>Productos:</strong> ${order.total}
               </p>
 
-              <p>
+              <p className="order-shipping">
                 <strong>Envío:</strong>{" "}
-                {order.shipping?.final ?? "Pendiente"}
+                {hasShippingFinal(order) ? (
+                  <span className="shipping-sent">
+                    💸 ${order.shipping.final}
+                    {" "} (Enviado por {order.shipping?.sentBy}) a las {order.shipping?.sentAt?.toDate().toLocaleString()}
+                  </span>
+                ) : (
+                  <span className="shipping-pending">
+                    ⏳ Pendiente
+                  </span>
+                )}
               </p>
+
+
+
+              {order.comments && order.comments.trim() !== "" && (
+                <p className="order-comments">
+                  <strong>Comentarios:</strong>{" "}
+                  {order.comments || "— Sin comentarios —"}
+                </p>
+
+              )}
+
+
             </section>
 
             <ul className="order-card__items">

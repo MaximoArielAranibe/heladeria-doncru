@@ -23,13 +23,17 @@ const SHIPPING_ZONES = {
 const Carrito = () => {
   const { cart, removeFromCart, clearCart, updateQuantity } =
     useContext(CartContext);
-
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderSent, setOrderSent] = useState(false);
   const [phoneError, setPhoneError] = useState("");
   const { gustos } = useGustos();
+  const [envio, setEnvio] = useState("conenvio");
+  const [comments, setComments] = useState("");
 
+  const handleEnvio = (e) => {
+    setEnvio(e.target.value);
+  }
 
 
   const nameRef = useRef("");
@@ -68,8 +72,8 @@ const Carrito = () => {
       .map((item) => {
         const gustosText = item.gustos?.length
           ? ` (${item.gustos
-              .map((id) => getGustoName(id))
-              .join(", ")})`
+            .map((id) => getGustoName(id))
+            .join(", ")})`
           : "";
 
         return `- ${item.title} x${item.quantity}${gustosText}`;
@@ -82,15 +86,20 @@ const Carrito = () => {
   Hola! Soy *${nameRef.current}* 👋
 
   Dirección: *${directionRef.current}*
-  Zona: *${SHIPPING_ZONES[zone].label}*
+  Zona estimada: *${SHIPPING_ZONES[zone].label}*
+
+  ${comments
+        ? `\n📝 *Comentarios adicionales:*\n${comments}\n`
+        : ""
+      }
+
 
   *Pedido:*
   ${items}
 
   Productos: $${total}
-  Envío estimado: ${
-      shippingEstimated !== null ? `$${shippingEstimated}` : "A confirmar"
-    }
+  Envío estimado: ${shippingEstimated !== null ? `$${shippingEstimated}` : "A confirmar"
+      }
 
   *El costo de envío te lo confirmamos en breve!!*
     `.trim();
@@ -108,6 +117,7 @@ const Carrito = () => {
     setIsSubmitting(true);
 
     try {
+      {console.log("Comments => ", comments)}
       const orderId = await createOrder({
         cart,
         total,
@@ -120,6 +130,7 @@ const Carrito = () => {
           estimated: shippingEstimated,
           zone,
         },
+        comments: comments || "",
       });
 
       window.open(
@@ -205,15 +216,6 @@ const Carrito = () => {
 
                 <div className="carrito-form">
                   <input placeholder="Tu nombre" onBlur={(e) => (nameRef.current = e.target.value)} />
-                  <input placeholder="Tu dirección" onBlur={(e) => (directionRef.current = e.target.value)} />
-
-                  <select value={zone} onChange={(e) => setZone(e.target.value)}>
-                    <option value="centro">Dentro de los 4 bulevares ($2000)</option>
-                    <option value="media">Zona intermedia ($2500)</option>
-                    <option value="lejana">Zona lejana ($3000)</option>
-                    <option value="muylejana">Zona muy lejana</option>
-                  </select>
-
                   <input
                     placeholder="Tu teléfono"
                     onBlur={(e) => {
@@ -221,6 +223,50 @@ const Carrito = () => {
                       setPhoneError("");
                     }}
                   />
+                  {envio === "conenvio" && (
+                    <input placeholder="Tu dirección" onBlur={(e) => (directionRef.current = e.target.value)} />
+
+                  )}
+
+                  <textarea maxLength={200} placeholder="Comentarios adicionales (ej: Porton negro, timbre roto, llamar antes, etc.)" rows={3} onChange={(e) => setComments(e.target.value)} />
+                  <small>{comments.length}/200</small>
+
+                  <div className="carrito-radiobuttons-container">
+                    <div>
+                      <input
+                        type="radio"
+                        id="envio"
+                        name="envio-sinenvio"
+                        value="conenvio"
+                        onChange={handleEnvio}
+                        checked={envio === "conenvio"} />
+                      <label htmlFor="envio">Con envío</label>
+                    </div>
+                    <div>
+                      <input
+                        type="radio"
+                        id="sinenvio"
+                        name="envio-sinenvio"
+                        value="sinenvio"
+                        onChange={handleEnvio}
+                        checked={envio === "sinenvio"} />
+                      <label htmlFor="sinenvio">Paso a retirar</label>
+                    </div>
+                  </div>
+
+                  {envio === "conenvio" && (
+                    <div className="">
+
+                      <p>Elige una zona aproximada</p>
+                      <select value={zone} onChange={(e) => setZone(e.target.value)}>
+                        <option value="centro">Dentro de los 4 bulevares ($2000)</option>
+                        <option value="media">Zona intermedia ($2500)</option>
+                        <option value="lejana">Zona lejana ($3000)</option>
+                        <option value="muylejana">Zona muy lejana</option>
+                      </select>
+                    </div>
+                  )}
+
 
                   {phoneError && <span className="form-error">{phoneError}</span>}
                 </div>

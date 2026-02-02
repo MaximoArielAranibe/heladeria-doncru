@@ -313,3 +313,34 @@
     padding: 9.3rem 2rem;
   }
 }
+
+.carrito-radiobuttons-container {
+  display: flex;
+  gap: 1rem;
+  font-weight: 600;
+
+  input[type="radio"] {
+    accent-color: #ff6b00;
+    cursor: pointer;
+
+    &:focus-visible {
+      outline: 2px solid #ff6b00;
+      outline-offset: 2px;
+    }
+  }
+
+  div {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+    cursor: pointer;
+  }
+
+  label {
+    cursor: pointer;
+  }
+
+  div:last-child {
+    font-weight: 400;
+  }
+}
