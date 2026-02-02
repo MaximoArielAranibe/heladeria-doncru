@@ -293,6 +293,64 @@ const AdminOrders = () => {
     }
   };
 
+  const markAsPaid = async (orderId) => {
+    try {
+      const user = auth.currentUser;
+
+      await updateDoc(doc(db, "orders", orderId), {
+        "payment.status": "paid",
+        "payment.paidAt": serverTimestamp(),
+        "payment.paidBy": user?.email || "Admin",
+      });
+
+      toast.success("Pago confirmado 💰");
+
+    } catch (err) {
+      console.error(err);
+      toast.error("Error al marcar pago");
+    }
+  };
+
+
+  const cancelPayment = async (orderId) => {
+    try {
+      await updateDoc(doc(db, "orders", orderId), {
+        "payment.status": "pending",
+        "payment.paidAt": null,
+        "payment.cancelledAt": serverTimestamp(),
+      });
+
+      toast.success("Pago anulado ⚠️");
+
+    } catch (err) {
+      console.error(err);
+      toast.error("Error al anular pago");
+    }
+  };
+  const updatePaymentMethod = async (orderId, method) => {
+    try {
+      const order = orders.find((o) => o.id === orderId);
+
+      const updateData = {
+        "payment.method": method,
+        "payment.updatedAt": serverTimestamp(),
+      };
+
+      if (order?.payment?.status === "paid") {
+        updateData["payment.methodChangedAt"] = serverTimestamp();
+      }
+
+      await updateDoc(doc(db, "orders", orderId), updateData);
+
+      toast.success(`Método actualizado: ${method} 💳`);
+
+    } catch (err) {
+      console.error(err);
+      toast.error("Error al actualizar método de pago");
+    }
+  };
+
+
 
   const archiveOrder = async (orderId, adminName = "Admin") => {
     try {
@@ -394,6 +452,52 @@ const AdminOrders = () => {
               <p>
                 <strong>Productos:</strong> ${order.total}
               </p>
+
+              {order.payment?.paidBy && (
+                <small style={{ color: "#64748b" }}>
+                  Cobrado por: {order.payment.paidBy}
+                </small>
+              )}
+
+
+              <p>
+                <strong>Pago:</strong>{" "}
+                <select
+                  value={order.payment?.method || "efectivo"}
+                  onChange={(e) =>
+                    updatePaymentMethod(order.id, e.target.value)
+                  }
+                  className="payment-method-select"
+                >
+                  <option value="efectivo">💵 Efectivo</option>
+                  <option value="transferencia">💳 Transferencia</option>
+                </select>
+              </p>
+
+              {order.payment?.methodChangedAt && (
+                <small style={{ color: "#64748b" }}>
+                  Método modificado:{" "}
+                  {order.payment.methodChangedAt.toDate().toLocaleString()}
+                </small>
+              )}
+
+
+
+              <p>
+                <strong>Estado pago:</strong>{" "}
+                {order.payment?.status === "paid" ? (
+                  <span className="payment-paid">
+                    ✅ Pagado{" "}
+                    {order.payment?.paidAt &&
+                      `(${order.payment.paidAt.toDate().toLocaleString()})`}
+                  </span>
+                ) : (
+                  <span className="payment-pending">
+                    ⏳ Pendiente
+                  </span>
+                )}
+              </p>
+
 
               <p className="order-shipping">
                 <strong>Envío:</strong>{" "}
@@ -498,6 +602,30 @@ const AdminOrders = () => {
               >
                 En camino 🚚
               </button>
+
+              {/* Marcar pagado */}
+              {order.payment?.status !== "paid" && (
+                <button
+                  className="btn btn--success"
+                  onClick={() => markAsPaid(order.id)}
+                >
+                  💰 Marcar pagado
+                </button>
+              )}
+
+              {/* Anular pago */}
+              {order.payment?.status === "paid" && (
+                <button
+                  className="btn btn--danger"
+                  onClick={() => cancelPayment(order.id)}
+                >
+                  ❌ Anular pago
+                </button>
+              )}
+
+
+
+
 
               <button
                 className="btn btn--primary"

@@ -30,6 +30,7 @@ const Carrito = () => {
   const { gustos } = useGustos();
   const [envio, setEnvio] = useState("conenvio");
   const [comments, setComments] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("efectivo")
 
   const handleEnvio = (e) => {
     setEnvio(e.target.value);
@@ -117,7 +118,6 @@ const Carrito = () => {
     setIsSubmitting(true);
 
     try {
-      {console.log("Comments => ", comments)}
       const orderId = await createOrder({
         cart,
         total,
@@ -130,6 +130,7 @@ const Carrito = () => {
           estimated: shippingEstimated,
           zone,
         },
+        payment: paymentMethod,
         comments: comments || "",
       });
 
@@ -223,10 +224,7 @@ const Carrito = () => {
                       setPhoneError("");
                     }}
                   />
-                  {envio === "conenvio" && (
-                    <input placeholder="Tu dirección" onBlur={(e) => (directionRef.current = e.target.value)} />
-
-                  )}
+                  {envio === "conenvio" && (<input placeholder="Tu dirección" onBlur={(e) => (directionRef.current = e.target.value)} />)}
 
                   <textarea maxLength={200} placeholder="Comentarios adicionales (ej: Porton negro, timbre roto, llamar antes, etc.)" rows={3} onChange={(e) => setComments(e.target.value)} />
                   <small>{comments.length}/200</small>
@@ -253,6 +251,37 @@ const Carrito = () => {
                       <label htmlFor="sinenvio">Paso a retirar</label>
                     </div>
                   </div>
+
+                  <div className="carrito-payment-method">
+  <p><strong>Forma de pago</strong></p>
+
+  <div className="carrito-radiobuttons-container">
+    <div>
+      <input
+        type="radio"
+        id="efectivo"
+        name="payment"
+        value="efectivo"
+        checked={paymentMethod === "efectivo"}
+        onChange={(e) => setPaymentMethod(e.target.value)}
+      />
+      <label htmlFor="efectivo">💵 Efectivo</label>
+    </div>
+
+    <div>
+      <input
+        type="radio"
+        id="transferencia"
+        name="payment"
+        value="transferencia"
+        checked={paymentMethod === "transferencia"}
+        onChange={(e) => setPaymentMethod(e.target.value)}
+      />
+      <label htmlFor="transferencia">💳 Transferencia</label>
+    </div>
+  </div>
+</div>
+
 
                   {envio === "conenvio" && (
                     <div className="">

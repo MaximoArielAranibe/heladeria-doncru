@@ -442,3 +442,42 @@
   background: #e0f2fe; // celeste claro
   color: #0369a1; // azul fuerte
 }
+
+.payment-paid {
+  color: #16a34a;
+  font-weight: 700;
+}
+
+.payment-pending {
+  color: #ca8a04;
+  font-weight: 700;
+}
+
+
+/* =====================
+   PAYMENT METHOD
+===================== */
+
+.payment-method-select {
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+
+  font-weight: 600;
+  font-size: 13px;
+
+  cursor: pointer;
+  background: #fff;
+
+  transition: all 0.2s ease;
+}
+
+.payment-method-select:hover {
+  border-color: #22c55e;
+}
+
+.payment-method-select:focus {
+  outline: none;
+  border-color: #22c55e;
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.25);
+}
