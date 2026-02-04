@@ -9,8 +9,8 @@ import { useProducts } from "../../hooks/useProducts";
 import { useGustos } from "../../hooks/useGustos";
 import SelectGustosModal from "../SelectGustosModal";
 import toast from "react-hot-toast";
-
 import "../../styles/AdminLocalOrderModal.scss";
+
 
 const AdminLocalOrderModal = ({ open, onClose }) => {
   const { products } = useProducts();
@@ -118,6 +118,20 @@ const AdminLocalOrderModal = ({ open, onClose }) => {
             <button
               key={p.id}
               onClick={() => {
+
+                // 👉 Si NO tiene gustos (ej: postres)
+                if (!p.maxGustos || p.maxGustos === 0) {
+                  addItem({
+                    ...p,
+                    gustos: [],
+                    quantity: 1,
+                  });
+
+                  toast.success("Producto agregado 🛒");
+                  return;
+                }
+
+                // 👉 Si TIENE gustos (helados)
                 setSelectedProduct(p);
                 setOpenGustos(true);
               }}
@@ -125,6 +139,7 @@ const AdminLocalOrderModal = ({ open, onClose }) => {
               {p.title}
             </button>
           ))}
+
 
         </div>
 

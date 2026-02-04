@@ -20,7 +20,8 @@ import toast from "react-hot-toast";
 import { archiveOrderWithStock } from "../../services/orders.service.js";
 import { useGustos } from "../../hooks/useGustos.js";
 import "../../styles/AdminOrders.scss";
-import ModalLocalOrder from "./ModalLocalOrder.jsx";
+import AdminLocalOrderModal from "./AdminLocalOrderModal.jsx";
+
 
 
 /* =====================
@@ -244,7 +245,6 @@ const AdminOrders = () => {
 
       toast.success("Estado actualizado");
 
-      toast.success("Estado actualizado");
 
     } catch (err) {
       console.error(err);
@@ -865,10 +865,12 @@ const AdminOrders = () => {
           </article>
         ))}
       </section>
-      <ModalLocalOrder
+
+      <AdminLocalOrderModal
         open={openLocalOrder}
         onClose={() => setOpenLocalOrder(false)}
       />
+
 
     </main>
   );

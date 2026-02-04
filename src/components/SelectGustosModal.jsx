@@ -5,7 +5,7 @@ import { useGustos } from "../hooks/useGustos";
 import "../styles/SelectGustosModal.scss";
 import toast from "react-hot-toast";
 
-const SelectGustosModal = ({ product, open, onClose }) => {
+const SelectGustosModal = ({ product, open, onClose, onConfirm }) => {
   const { addToCart } = useCart();
   const { gustos, loading } = useGustos();
 
@@ -47,15 +47,26 @@ const SelectGustosModal = ({ product, open, onClose }) => {
   const handleConfirm = () => {
     if (selected.length === 0) return;
 
-    addToCart({
+    const item = {
       ...product,
-      gustos: selected, // ← IDs
-    });
+      gustos: selected,
+      quantity: 1,
+    };
 
-    toast.success("Producto agregado al carrito 🛒");
+    if (onConfirm) {
+      // 👉 Modo ADMIN
+      onConfirm(item);
+    } else {
+      // 👉 Modo CLIENTE
+      addToCart(item);
+    }
+
+    toast.success("Producto agregado 🛒");
+
     setSelected([]);
     onClose();
   };
+
 
   const handleClose = () => {
     setSelected([]);

@@ -1,0 +1,47 @@
+.admin-local-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.admin-local-modal {
+  background: white;
+  width: 420px;
+  padding: 20px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.local-products {
+  display: grid;
+  grid-template-columns: repeat(2,1fr);
+  gap: 6px;
+}
+
+.local-products button {
+  padding: 6px;
+}
+
+.local-cart {
+  border-top: 1px solid #eee;
+  padding-top: 8px;
+}
+
+.cart-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+}
+
+.local-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
