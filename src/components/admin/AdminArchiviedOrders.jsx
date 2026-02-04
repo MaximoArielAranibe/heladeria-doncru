@@ -1,61 +1,117 @@
 import "../../styles/AdminOrders.scss";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { getArchivedOrders } from "../../services/orders.service";
 import { useGustos } from "../../hooks/useGustos";
+import OrderHistory from "./OrderHistory";
+import { useOrderEvents } from "../../hooks/useOrderEvents";
 
 
 const PAGE_SIZE = 10;
+
+const BRANCH_BY_EMAIL = {
+  "heladosdoncru@gmail.com": "Almafuerte",
+  "nicolabrandon89@gmail.com": "Gral Paz",
+  "darknesswong@gmail.com": "Maximo programador",
+
+};
+
+const getBranchName = (email) => {
+  if (!email) return "—";
+
+  return BRANCH_BY_EMAIL[email] || email;
+};
+
 
 const AdminArchivedOrders = () => {
   const [orders, setOrders] = useState([]);
   const [lastDoc, setLastDoc] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [hasFetched, setHasFetched] = useState(false);
+  const [isReloading, setIsReloading] = useState(false);
+
+
   const { gustos: allGustos } = useGustos();
+  const orderEvents = useOrderEvents();
 
 
-  // null = sin filtro (ver todos)
+  /* =====================
+     FILTRO FECHA
+  ===================== */
+
   const [dateFilter, setDateFilter] = useState(null);
-
-  // buffer del input
   const [dateDraft, setDateDraft] = useState("");
 
-  const [hasFetched, setHasFetched] = useState(false);
+  /* =====================
+     GUSTOS MAP
+  ===================== */
 
-  const getGustoName = (id) => {
-    const found = allGustos.find((g) => g.id === id);
-    return found?.name || "—";
-  };
+  const gustosMap = useMemo(() => {
+    return new Map(allGustos.map((g) => [g.id, g.name]));
+  }, [allGustos]);
+
+  const getGustoName = (id) =>
+    gustosMap.get(id) || "—";
+
+  /* =====================
+     FETCH
+  ===================== */
 
   const fetchOrders = useCallback(
     async ({ reset = false } = {}) => {
-      if (loading) return;
 
-      setLoading(true);
+      try {
+        const res = await getArchivedOrders({
+          pageSize: PAGE_SIZE,
+          lastDoc: reset ? null : lastDoc,
+          date: dateFilter,
+        });
 
-      const res = await getArchivedOrders({
-        pageSize: PAGE_SIZE,
-        lastDoc: reset ? null : lastDoc,
-        date: dateFilter,
-      });
+        setOrders((prev) =>
+          reset ? res.orders : [...prev, ...res.orders]
+        );
 
-      setOrders((prev) =>
-        reset ? res.orders : [...prev, ...res.orders]
-      );
+        setLastDoc(res.lastDoc);
+        setHasFetched(true);
 
-      setLastDoc(res.lastDoc);
-      setHasFetched(true);
-      setLoading(false);
+      } catch (err) {
+        console.error("fetchOrders error:", err);
+
+      } finally {
+        setLoading(false);
+        setIsReloading(false);
+      }
+
     },
-    [dateFilter, lastDoc, loading]
+    [dateFilter, lastDoc]
   );
 
-  // ✅ FETCH INICIAL (una sola vez)
-  useEffect(() => {
-    fetchOrders({ reset: true });
-  }, []); // 👈 intencionalmente vacío
 
+  /* =====================
+     FETCH INICIAL
+  ===================== */
+
+  useEffect(() => {
+    let mounted = true;
+
+    const init = async () => {
+      if (!mounted) return;
+      await fetchOrders({ reset: true });
+    };
+
+    init();
+
+    return () => {
+      mounted = false;
+    };
+  }, [fetchOrders]);
+
+
+  /* =====================
+     FILTRO
+  ===================== */
   const applyFilter = () => {
-    setOrders([]);
+    setIsReloading(true);
+
     setLastDoc(null);
     setHasFetched(false);
 
@@ -64,13 +120,34 @@ const AdminArchivedOrders = () => {
     fetchOrders({ reset: true });
   };
 
+
+
+  /* =====================
+     HELPERS
+  ===================== */
+
+  const formatDate = (ts) => {
+    if (!ts?.toDate) return "—";
+
+    return ts.toDate().toLocaleString("es-AR", {
+      dateStyle: "short",
+      timeStyle: "short",
+    });
+  };
+
+  /* =====================
+     RENDER
+  ===================== */
+
   return (
     <section className="admin-archived-orders">
+
       <h2>Pedidos archivados</h2>
 
       {/* =====================
-          FILTRO MANUAL
+          FILTRO
       ===================== */}
+
       <div className="archived-filters">
         <input
           type="date"
@@ -82,23 +159,31 @@ const AdminArchivedOrders = () => {
           className="btn btn--secondary"
           disabled={loading}
           onClick={applyFilter}
+
+
         >
           Aplicar filtro
         </button>
       </div>
 
       {/* =====================
-          LOADING REAL
+          LOADING
       ===================== */}
-      {loading && (
+
+      {/* LOADING */}
+
+      {(loading || isReloading) && (
         <p className="admin-orders__loading">
+          <span className="spinner" />
           Cargando pedidos archivados…
         </p>
       )}
 
+
       {/* =====================
-          EMPTY STATE REAL
+          EMPTY
       ===================== */}
+
       {!loading && hasFetched && orders.length === 0 && (
         <p className="archived-empty visible">
           {dateFilter
@@ -110,50 +195,129 @@ const AdminArchivedOrders = () => {
       {/* =====================
           LISTA
       ===================== */}
-      {orders.map((order) => (
-        <article key={order.id} className="order-card archived">
-          <header className="order-card__header">
-            <strong>Pedido #{order.id.slice(0, 6)}</strong>
-            <span className="archived-badge">Archivado</span>
-          </header>
 
-          <section className="order-card__info">
-            <p>
-              <strong>Comprador:</strong>{" "}
-              {order.customer?.name || "Sin nombre"}
-            </p>
-            <p>
-              <strong>Total:</strong> ${order.total}
-            </p>
-            <p>
-              <strong>Fecha:</strong>{" "}
-              {order.createdAt?.toDate?.().toLocaleString() || "—"}
-            </p>
-          </section>
+      {orders.map((order) => {
 
-          <ul className="order-card__items">
-            {order.items?.map((item, idx) => (
-              <li key={idx}>
-                <strong>{item.title}</strong> x{item.quantity}
+        const productsTotal = order.total ?? 0;
+        const shipping = order.shipping?.final ?? 0;
+        const finalTotal = productsTotal + shipping;
 
-                {item.gustos?.length > 0 && (
-                  <div className="archived-gustos">
-                    🍦 Gustos:{" "}
-                    {item.gustos
-                      .map((id) => getGustoName(id))
-                      .join(", ")}
-                  </div>
+        return (
+          <div className="order-archived-container">
+
+            <article key={order.id} className="order-card archived">
+
+              {/* HEADER */}
+
+              <header className="order-card__header">
+
+                <strong>#{order.id.slice(0, 6)}</strong>
+
+                <span className="archived-badge">
+                  Archivado
+                </span>
+
+              </header>
+
+              {/* INFO */}
+
+              <section className="order-card__info">
+
+                <p>
+                  <b>Cliente:</b> {order.customer?.name || "—"}
+                </p>
+
+                <p>
+                  <b>Dirección:</b> {order.customer?.direction || "—"}
+                </p>
+
+                <p>
+                  <b>Teléfono:</b> {order.customer?.phone || "—"}
+                </p>
+
+                <p>
+                  <b>Fecha:</b> {formatDate(order.createdAt)}
+                </p>
+
+                <p>
+                  <b>Pago:</b>{" "}
+                  {order.payment?.method || "—"}
+                </p>
+
+                {order.payment?.paidBy && (
+                  <small>
+                    Pedido tomado por: <strong>{getBranchName(order.payment.paidBy)}</strong>
+                  </small>
                 )}
 
-              </li>
-            ))}
-          </ul>
-        </article>
-      ))}
+
+                <p>
+                  <b>Envío:</b>{" "}
+                  {shipping
+                    ? `$${shipping}`
+                    : "Pendiente"}
+                </p>
+
+                <p>
+                  <b>Productos:</b> ${productsTotal}
+                </p>
+
+                <p>
+                  <b>Total final:</b> ${finalTotal}
+                </p>
+
+                <p>
+                  <b>Estado pago:</b>{" "}
+                  {order.payment?.status === "paid"
+                    ? "✅ Pagado"
+                    : "⏳ Pendiente"}
+                </p>
+
+                {order.comments?.trim() && (
+                  <p>
+                    <b>Comentarios:</b> {order.comments}
+                  </p>
+                )}
+
+              </section>
+
+              {/* ITEMS */}
+
+              <ul className="order-card__items">
+
+                {order.items?.map((item, idx) => {
+
+                  const gustosText = item.gustos?.length
+                    ? ` (${item.gustos
+                      .map(getGustoName)
+                      .join(", ")})`
+                    : "";
+
+                  return (
+                    <li key={idx}>
+                      {item.title} x{item.quantity}
+                      {gustosText}
+                    </li>
+                  );
+                })}
+
+              </ul>
+              <aside>
+                <OrderHistory
+                  events={orderEvents[order.id] || []}
+                />
+              </aside>
+
+            </article>
+          </div>
+
+        );
+      })}
 
       {/* =====================
           PAGINACIÓN
       ===================== */}
+
       {!loading && orders.length >= PAGE_SIZE && lastDoc && (
         <button
           className="btn btn--secondary"
@@ -162,6 +326,7 @@ const AdminArchivedOrders = () => {
           Cargar más
         </button>
       )}
+
     </section>
   );
 };

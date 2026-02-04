@@ -1,5 +1,9 @@
 @use "./OrderHistory";
 
+/* =====================
+   ROOT
+===================== */
+
 .admin-orders {
   display: flex;
   flex-direction: column;
@@ -14,6 +18,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
 
   h2 {
     font-size: 22px;
@@ -36,6 +41,11 @@
 
 .admin-orders__loading,
 .admin-orders__empty {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+
   text-align: center;
   font-weight: 600;
   color: #64748b;
@@ -63,19 +73,15 @@
 
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
 }
+
+/* Header */
 
 .order-card__header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
-
-.order-card__header-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
 
 /* =====================
@@ -85,25 +91,57 @@
 .order-status {
   padding: 4px 10px;
   border-radius: 999px;
+
   font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
+
+
+
+  white-space: nowrap;
 }
 
+/* ⏳ Pendiente */
 .order-status--pending {
-  background: #fef9c3;
-  color: #854d0e;
+  background: #fef3c7;
+  /* amber-100 */
+  color: #92400e;
+  /* amber-800 */
 }
 
+/* 💸 Costo enviado */
+.order-status--cost_send {
+  background: #e0f2fe;
+  /* sky-100 */
+  color: #075985;
+  /* sky-800 */
+}
+
+/* 🚚 En camino */
+.order-status--in_transit {
+  background: #dbeafe;
+  /* blue-100 */
+  color: #1e3a8a;
+  /* blue-900 */
+}
+
+/* ✅ Completado */
 .order-status--completed {
-  background: black;
-  color: #fff;
+  background: #dcfce7;
+  /* green-100 */
+  color: #166534;
+  /* green-800 */
+  font-weight: 600;
 }
 
+/* ❌ Cancelado */
 .order-status--cancelled {
   background: #fee2e2;
+  /* red-100 */
   color: #991b1b;
+  /* red-800 */
 }
+
 
 /* =====================
    INFO
@@ -112,21 +150,20 @@
 .order-card__info {
   display: flex;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: 14px 24px;
+  width: 100%;
 
   p {
     margin: 0;
     font-size: 14px;
+    display: block;
+    text-overflow: ellipsis;
 
-    a {
-      font-weight: 600;
-      color: #2563eb;
-      text-decoration: none;
+  }
 
-      &:hover {
-        text-decoration: underline;
-      }
-    }
+  small {
+    font-size: 12px;
+    color: #64748b;
   }
 }
 
@@ -136,8 +173,12 @@
 
 .order-card__items {
   list-style: none;
-  padding-left: 0;
+  padding: 0;
   margin: 0;
+
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 
   li {
     font-size: 14px;
@@ -148,200 +189,143 @@
 /* =====================
    ACTIONS
 ===================== */
+
 .order-card__actions {
   display: flex;
-  gap: 8px;
   flex-wrap: wrap;
-
   align-items: center;
+  gap: 8px;
 
   border-top: 1px solid #f1f5f9;
-  padding-top: 10px;
+  padding-top: 12px;
   margin-top: 6px;
 }
-
 
 /* =====================
    BUTTONS
 ===================== */
 
 .btn {
-  padding: 8px 14px;
+  min-height: 34px;
+  padding: 6px 14px;
+
   border-radius: 10px;
   border: none;
+
   font-weight: 700;
-  cursor: pointer;
   font-size: 13px;
-}
 
-.btn--success {
-  background: #22c55e;
-  color: #ffffff;
-}
+  cursor: pointer;
+  white-space: nowrap;
 
-.btn--danger {
-  background: #ef4444;
-  color: #ffffff;
-}
-
-.btn--whatsapp {
-  background: #25d366;
-  color: #ffffff;
+  transition: all 0.15s ease;
 }
 
 .btn:hover {
   opacity: 0.9;
 }
 
+.btn--primary {
+  background: #020617;
+  /* slate-950 */
+  color: #ffffff;
+}
+
+.btn--primary:hover {
+  background: #020617ee;
+  transform: translateY(-1px);
+}
+
+
 /* =====================
-   DELETE BUTTON
+   SECONDARY (Neutral)
 ===================== */
+
+.btn--secondary {
+  background: #f1f5f9;
+  /* slate-100 */
+  color: #020617;
+}
+
+.btn--secondary:hover {
+  background: #e2e8f0;
+}
+
+
+/* =====================
+   SUCCESS (Pago OK)
+===================== */
+
+.btn--success {
+  background: #16a34a;
+  /* green-600 */
+  color: #ffffff;
+}
+
+.btn--success:hover {
+  background: #15803d;
+}
+
+
+/* =====================
+   DANGER (Eliminar / Cancelar)
+===================== */
+
+.btn--danger {
+  background: #dc2626;
+  /* red-600 */
+  color: #ffffff;
+}
+
+.btn--danger:hover {
+  background: #b91c1c;
+}
+
+
+/* =====================
+   WHATSAPP
+===================== */
+
+.btn--whatsapp {
+  background: #25d366;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.btn--whatsapp:hover {
+  background: #1ebe5d;
+}
+
+.btn--archive{
+  background-color: #F79F1F;
+  color: #FFF;
+  font-weight: 500;
+  border-bottom: 2px solid #6F1E51;
+}
+/* =====================
+   DELETE
+===================== */
+
 
 .order-delete-btn {
   background: transparent;
   border: none;
-  cursor: pointer;
+
   font-size: 14px;
+  font-weight: 700;
+
+  cursor: pointer;
   color: #ef4444;
 }
 
 /* =====================
-   RESPONSIVE
+   SHIPPING
 ===================== */
-
-@media (max-width: 640px) {
-  .admin-orders__header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-  }
-}
-
-.order-status--in_transit {
-  background: #dbeafe;
-  color: #1e40af;
-}
-
-.btn--info {
-  background: #3b82f6;
-  color: #ffffff;
-}
-
-
-/* =====================
-   ARCHIVED ORDERS
-===================== */
-
-.admin-archived-orders {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  min-height: 320px; // evita saltos visuales
-}
-
-/* =====================
-   FILTERS
-===================== */
-
-.archived-filters {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.archived-filters input[type="date"] {
-  height: 40px;
-  padding: 0 12px;
-  border-radius: 10px;
-  border: 1px solid #e5e7eb;
-  font-weight: 600;
-  background: #fff;
-}
-
-/* =====================
-   ARCHIVED BADGE
-===================== */
-
-.archived-badge {
-  background: #020617;
-  color: #fff;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 4px 10px;
-  border-radius: 999px;
-}
-
-/* =====================
-   EMPTY STATE (NO FLICKER)
-===================== */
-
-.archived-empty {
-  opacity: 0;
-  height: 0;
-  overflow: hidden;
-  margin: 0;
-  transition: opacity 0.25s ease;
-  pointer-events: none;
-}
-
-.archived-empty.visible {
-  opacity: 1;
-  height: auto;
-  margin: 8px 0 16px;
-}
-.order-shipping-input {
-  width: 90px;
-  padding: 6px 28px 6px 10px;
-
-  border-radius: 8px;
-  border: 1px solid #ff69c4;
-
-  background-color: #fff;
-
-  color: #333;
-  font-weight: 600;
-  font-size: 14px;
-
-  text-align: center;
-
-  outline: none;
-  cursor: pointer;
-
-  transition: all 0.2s ease;
-
-  /* ❌ Sacar flechas del number */
-  -moz-appearance: textfield;
-  appearance: textfield;
-
-  &::-webkit-inner-spin-button,
-  &::-webkit-outer-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-  }
-
-  &:hover {
-    border-color: #ff2fa0;
-  }
-
-  &:focus {
-    border-color: #ff2fa0;
-    box-shadow: 0 0 0 2px rgba(255, 105, 196, 0.25);
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-}
-
-/* =========================
-   SHIPPING SELECT
-========================= */
 
 .shipping-select-wrapper {
   display: flex;
-  gap: 6px;
   align-items: center;
+  gap: 6px;
 }
 
 .shipping-select,
@@ -359,15 +343,15 @@
   padding: 0 10px;
 
   outline: none;
-
   transition: all 0.2s ease;
 }
+
 
 /* Select */
 
 .shipping-select {
-  cursor: pointer;
   min-width: 90px;
+  cursor: pointer;
 }
 
 /* Input */
@@ -375,6 +359,15 @@
 .shipping-input {
   width: 70px;
   text-align: center;
+
+  -moz-appearance: textfield;
+  appearance: textfield;
+
+  &::-webkit-inner-spin-button,
+  &::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
 }
 
 /* Hover / Focus */
@@ -390,9 +383,9 @@
   box-shadow: 0 0 0 2px rgba(255, 105, 196, 0.25);
 }
 
-/* =========================
+/* =====================
    SHIPPING STATUS
-========================= */
+===================== */
 
 .order-shipping {
   display: flex;
@@ -402,8 +395,6 @@
   font-size: 14px;
 }
 
-/* Enviado */
-
 .shipping-sent {
   display: inline-flex;
   align-items: center;
@@ -412,14 +403,12 @@
   padding: 3px 8px;
   border-radius: 999px;
 
-  background: #dcfce7; // verde claro
-  color: #166534; // verde oscuro
+  background: #dcfce7;
+  color: #166534;
 
   font-weight: 700;
   font-size: 12px;
 }
-
-/* Pendiente */
 
 .shipping-pending {
   display: inline-flex;
@@ -429,43 +418,20 @@
   padding: 3px 8px;
   border-radius: 999px;
 
-  background: #fef9c3; // amarillo claro
-  color: #854d0e; // amarillo oscuro
+  background: #fef9c3;
+  color: #854d0e;
 
   font-weight: 700;
   font-size: 12px;
 }
 
-/* Fecha de envío (si la usás después) */
-
-.shipping-date {
-  font-size: 11px;
-  color: #64748b;
-  margin-left: 4px;
-}
-
-.order-status--cost_send {
-  background: #e0f2fe; // celeste claro
-  color: #0369a1; // azul fuerte
-}
-
-.payment-paid {
-  color: #16a34a;
-  font-weight: 700;
-}
-
-.payment-pending {
-  color: #ca8a04;
-  font-weight: 700;
-}
-
-
 /* =====================
-   PAYMENT METHOD
+   PAYMENT
 ===================== */
 
 .payment-method-select {
   padding: 4px 8px;
+
   border-radius: 8px;
   border: 1px solid #e5e7eb;
 
@@ -487,26 +453,114 @@
   border-color: #22c55e;
   box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.25);
 }
-.order-date {
-  font-size: 11px;
-  color: #64748b;
-  margin-left: auto;
+
+.payment-paid {
+  color: #16a34a;
+  font-weight: 700;
 }
 
+.payment-pending {
+  color: #ca8a04;
+  font-weight: 700;
+}
+
+/* =====================
+   DATE
+===================== */
+
+.order-date {
+  margin-left: auto;
+
+  font-size: 11px;
+  color: #64748b;
+
+  white-space: nowrap;
+}
+
+/* =====================
+   SPINNER
+===================== */
 
 .spinner {
   width: 18px;
   height: 18px;
+
   border: 3px solid #e5e7eb;
   border-top: 3px solid #22c55e;
+
   border-radius: 50%;
+
   animation: spin 0.8s linear infinite;
+
   display: inline-block;
-  margin-right: 6px;
 }
 
 @keyframes spin {
   to {
     transform: rotate(360deg);
   }
+}
+
+/* =====================
+   NEW BADGE
+===================== */
+
+.new-badge {
+  background: #22c55e;
+  color: white;
+
+  font-size: 11px;
+  padding: 3px 8px;
+
+  border-radius: 999px;
+  font-weight: 700;
+
+  white-space: nowrap;
+}
+
+/* =====================
+   RESPONSIVE
+===================== */
+
+@media (max-width: 640px) {
+  .admin-orders__header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .order-card__actions {
+    justify-content: flex-start;
+  }
+
+  .order-date {
+    width: 100%;
+    margin-left: 0;
+    text-align: right;
+  }
+}
+
+.admin-archived-orders {
+  display: flex;
+  flex-direction: column;
+  gap: 20px; // 👈 espacio entre pedidos
+}
+
+.order-card.archived {
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  border-radius: 12px;
+}
+
+.btn--pickup {
+  background: #f59e0b; // naranja suave
+  color: #fff;
+}
+
+.btn--pickup:hover {
+  background: #d97706;
+}
+
+
+.shipping-pickup {
+  color: #d97706;
+  font-weight: 600;
 }

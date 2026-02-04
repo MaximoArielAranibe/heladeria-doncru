@@ -20,6 +20,8 @@ import toast from "react-hot-toast";
 import { archiveOrderWithStock } from "../../services/orders.service.js";
 import { useGustos } from "../../hooks/useGustos.js";
 import "../../styles/AdminOrders.scss";
+import ModalLocalOrder from "./ModalLocalOrder.jsx";
+
 
 /* =====================
    CONSTANTS
@@ -33,8 +35,21 @@ const STATUS_LABELS = {
   cancelled: "Cancelado",
 };
 
+/* =====================
+   ADMIN / SUCURSALES
+===================== */
+
+const ADMIN_BRANCH_MAP = {
+  "heladosdoncru@gmail.com": "Almafuerte",
+  "nicolabrandon89@gmail.com": "Gral Paz",
+  "darknesswong@gmail.com": "Maximo programador"
+};
+
+
 const hasShippingFinal = (order) =>
   typeof order.shipping?.final === "number" && order.shipping.final > 0;
+
+
 
 /* =====================
    COMPONENT
@@ -47,6 +62,7 @@ const AdminOrders = () => {
   const [fetchError, setFetchError] = useState(null);
   const [shippingDraft, setShippingDraft] = useState({});
   const [newOrders, setNewOrders] = useState(0);
+  const [openLocalOrder, setOpenLocalOrder] = useState(false);
 
 
 
@@ -79,6 +95,13 @@ const AdminOrders = () => {
     }
 
     previousCountRef.current = count;
+  };
+
+
+  const getBranchByEmail = (email) => {
+    if (!email) return "—";
+
+    return ADMIN_BRANCH_MAP[email] || "Sucursal desconocida";
   };
 
   /* =====================
@@ -204,7 +227,22 @@ const AdminOrders = () => {
         type: "STATUS_CHANGED",
         from: order.status,
         to: status,
+        meta: {
+          changedBy: auth.currentUser?.email || "Admin"
+        }
       });
+
+      if (status === "in_transit") {
+        const message = buildInTransitMessage(order);
+
+        await sendWhatsAppMessage(
+          order.customer?.phone,
+          message,
+          order.id
+        );
+      }
+
+      toast.success("Estado actualizado");
 
       toast.success("Estado actualizado");
 
@@ -237,8 +275,18 @@ const AdminOrders = () => {
       await logOrderEvent({
         orderId: order.id,
         type: "SHIPPING_ADJUSTED",
-        meta: { to: value },
+        meta: {
+          to: value,
+          changedBy: auth.currentUser?.email || "Admin"
+        },
+
       });
+
+      sendWhatsAppMessage(
+        order.customer?.phone,
+        buildShippingMessage(order, value, getGustoName),
+        order.id
+      );
 
       setShippingDraft((p) => ({ ...p, [order.id]: value }));
 
@@ -268,6 +316,36 @@ const AdminOrders = () => {
     }
   }, []);
 
+  const markAsPickup = useCallback(async (order) => {
+    try {
+      const user = auth.currentUser;
+
+      await updateDoc(doc(db, "orders", order.id), {
+        deliveryType: "pickup",
+        "shipping.final": 0,
+        "shipping.sentBy": user?.email || "Admin",
+        "shipping.sentAt": serverTimestamp(),
+        status: "in_transit",
+        updatedAt: serverTimestamp(),
+      });
+
+      await logOrderEvent({
+        orderId: order.id,
+        type: "PICKUP_SELECTED",
+        meta: {
+          changedBy: user?.email || "Admin",
+        },
+      });
+
+      toast.success("Pedido marcado como retiro en local 🏪");
+
+    } catch (err) {
+      console.error(err);
+      toast.error("Error al marcar retiro");
+    }
+  }, []);
+
+
   const cancelPayment = useCallback(async (orderId) => {
     try {
       await updateDoc(doc(db, "orders", orderId), {
@@ -291,6 +369,13 @@ const AdminOrders = () => {
   const updatePaymentMethod = useCallback(async (orderId, method) => {
     try {
       const order = ordersMap.get(orderId);
+
+      if (!order) return;
+
+      const prevMethod = order.payment?.method || "efectivo";
+
+      if (prevMethod === method) return;
+
       const data = {
         "payment.method": method,
         "payment.updatedAt": serverTimestamp(),
@@ -302,13 +387,25 @@ const AdminOrders = () => {
 
       await updateDoc(doc(db, "orders", orderId), data);
 
+      // ✅ LOG EVENTO
+      await logOrderEvent({
+        orderId,
+        type: "PAYMENT_METHOD_CHANGED",
+        from: prevMethod,
+        to: method,
+        meta: {
+          changedBy: auth.currentUser?.email || "Admin",
+        },
+      });
+
       toast.success("Método actualizado");
 
     } catch (err) {
       console.error(err);
       toast.error("Error método");
     }
-  }, []);
+  }, [ordersMap]);
+
 
   const deleteOrder = useCallback(async (orderId) => {
     const ok = confirm("¿Eliminar este pedido?")
@@ -321,6 +418,10 @@ const AdminOrders = () => {
       await logOrderEvent({
         orderId,
         type: "ORDER_DELETED",
+        meta: {
+          changedBy: auth.currentUser?.email || "Admin"
+        }
+
       });
 
       toast.success("Pedido eliminado");
@@ -331,27 +432,90 @@ const AdminOrders = () => {
     }
   }, []);
 
-
-
-  const archiveOrder = useCallback(async (orderId) => {
+  const archiveOrder = useCallback(async (order) => {
     try {
-      const order = ordersMap.get(orderId)
-
       if (!order) return;
 
       await archiveOrderWithStock(order);
 
+      await logOrderEvent({
+        orderId: order.id,
+        type: "ORDER_ARCHIVED",
+        meta: {
+          changedBy: auth.currentUser?.email || "Admin",
+        },
+      });
+
       toast.success("Pedido archivado 🍦");
 
     } catch (err) {
-      console.error(err);
-      toast.error("Error archivar");
+      console.error("Archive error:", err);
+      toast.error("Error al archivar");
     }
   }, []);
 
-  /* =====================
-    FILTER
-  ===================== */
+  const sendWhatsAppMessage = async (phone, message, orderId) => {
+    if (!phone || !message || !orderId) return;
+
+    try {
+      const cleanPhone = phone.replace(/\D/g, "");
+      const encodedMessage = encodeURIComponent(message);
+
+      window.open(
+        `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodedMessage}`,
+        "_blank"
+      );
+
+      // ✅ LOG EVENTO WHATSAPP
+      await logOrderEvent({
+        orderId,
+        type: "WHATSAPP_SENT",
+
+        meta: {
+          changedBy: auth.currentUser?.email || "Admin",
+        },
+      });
+
+    } catch (err) {
+      console.error("WhatsApp log error:", err);
+    }
+  };
+
+
+  const buildShippingMessage = (order, shippingValue, getGustoName) => {
+    const productsTotal = order.total ?? 0;
+    const finalTotal = productsTotal + shippingValue;
+
+    const itemsText = order.items
+      ?.map((item) => {
+        const gustosText = item.gustos?.length
+          ? ` (${item.gustos
+            .map((id) => getGustoName(id))
+            .join(", ")})`
+          : "";
+
+        return `• ${item.title} x${item.quantity}${gustosText}`;
+      })
+      .join("\n");
+
+    return `
+  ¡Tu pedido está casi listo!
+
+  🚚 El costo de envío hasta tu dirección es de $${shippingValue}.
+
+  🧾 Resumen del pedido:
+
+  ${itemsText || "• Sin productos"}
+
+  • Productos: $${productsTotal}
+  • Envío: $${shippingValue}
+
+  • TOTAL con envío: $*${finalTotal}*
+
+  ¿Confirmás el pedido para enviarlo? ✨
+    `.trim();
+  };
+
   const filteredOrders = useMemo(() => {
     return orders.filter((o) => {
       if (o.archived) return false;
@@ -362,10 +526,27 @@ const AdminOrders = () => {
     });
   }, [orders, filter]);
 
+  const buildInTransitMessage = (order) => {
+    const name = order.customer?.name || "Hola";
+    const productsTotal = order.total ?? 0;
+    const shipping = order.shipping?.final ?? 0;
+    const finalTotal = productsTotal + shipping;
 
-  /* =====================
-    RENDER
-  ===================== */
+    return `
+  Tu pedido ya está en camino ✨
+
+  ¡Gracias ${name} por elegir Helados Doncru! 🍦 🙌
+
+  🧾 Resumen:
+
+  • Productos: $${productsTotal}
+  • Envío: $${shipping}
+
+  • TOTAL: $${finalTotal}
+
+  ¡Que lo disfrutes! 😄
+    `.trim();
+  };
 
   if (loading) {
     return (
@@ -385,6 +566,13 @@ const AdminOrders = () => {
 
       <header className="admin-orders__header">
         <h2>Pedidos</h2>
+        <button
+          className="btn btn--primary"
+          onClick={() => setOpenLocalOrder(true)}
+        >
+          ➕ Pedido en local
+        </button>
+
 
         {newOrders > 0 && (
           <span className="new-badge">
@@ -442,10 +630,14 @@ const AdminOrders = () => {
               <p><b>Total:</b> ${order.total}</p>
 
               {order.payment?.paidBy && (
-                <small>
-                  Cobrado por: {order.payment.paidBy}
+                <small className="order-branch">
+                  🏪 Pedido tomado por:{" "}
+                  <strong>
+                    {getBranchByEmail(order.payment.paidBy)}
+                  </strong>
                 </small>
               )}
+
 
               {/* MÉTODO */}
 
@@ -469,7 +661,7 @@ const AdminOrders = () => {
               {/* ESTADO */}
 
               <p>
-                <b>Estado:</b>{" "}
+                <b>Estado pagó:</b>{" "}
                 {order.payment?.status === "paid" ? (
                   <span className="payment-paid">
                     ✅ Pagado{" "}
@@ -486,10 +678,13 @@ const AdminOrders = () => {
               </p>
 
               {/* ENVÍO */}
-
               <p className="order-shipping">
                 <b>Envío:</b>{" "}
-                {hasShippingFinal(order) ? (
+                {order.deliveryType === "pickup" ? (
+                  <span className="shipping-pickup">
+                    🏪 Retira en local
+                  </span>
+                ) : hasShippingFinal(order) ? (
                   <span className="shipping-sent">
                     💸 ${order.shipping.final}
                   </span>
@@ -499,6 +694,7 @@ const AdminOrders = () => {
                   </span>
                 )}
               </p>
+
 
               {/* COMENTARIOS */}
 
@@ -535,7 +731,7 @@ const AdminOrders = () => {
 
               <div className="shipping-select-wrapper">
 
-                <select
+                <select className="shipping-select"
                   value={shippingDraft[order.id] ?? ""}
                   onChange={(e) =>
                     setShippingDraft((p) => ({
@@ -556,21 +752,23 @@ const AdminOrders = () => {
                 </select>
 
                 <input
+                  className="shipping-input"
                   type="number"
                   min="0"
                   placeholder="Otro"
                   value={
                     shippingDraft[order.id] ??
-                    order.shipping?.final ??
+                    order.shipping?.final?.toString() ??
                     ""
                   }
                   onChange={(e) =>
                     setShippingDraft((p) => ({
                       ...p,
-                      [order.id]: Number(e.target.value),
+                      [order.id]: e.target.value, // 👈 STRING
                     }))
                   }
                 />
+
 
               </div>
 
@@ -581,6 +779,14 @@ const AdminOrders = () => {
               >
                 Enviar costo
               </button>
+
+              <button
+                className="btn btn--pickup"
+                onClick={() => markAsPickup(order)}
+              >
+                🏪 Retira en local.
+              </button>
+
 
               <button
                 className="btn btn--secondary"
@@ -623,8 +829,8 @@ const AdminOrders = () => {
 
               {order.status === "completed" && (
                 <button
-                  className="btn btn--secondary"
-                  onClick={() => archiveOrder(order.id)}
+                  className="btn btn--archive"
+                  onClick={() => archiveOrder(order)}
                 >
                   Archivar
                 </button>
@@ -659,6 +865,11 @@ const AdminOrders = () => {
           </article>
         ))}
       </section>
+      <ModalLocalOrder
+        open={openLocalOrder}
+        onClose={() => setOpenLocalOrder(false)}
+      />
+
     </main>
   );
 };

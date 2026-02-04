@@ -29,11 +29,11 @@ const Footer = () => {
         {/* Contacto */}
         <div className="footer__contact">
           <h4>Contacto</h4>
-          <p>📍 Pergamino, Buenos Aires</p>
           <p>📞 <a href="tel:+5492477361535">+54 9 2477-361535</a></p>
           <p>📞 <a href="tel:+5492477349023">+54 9 2477-349023</a></p>
           <p>🕒 Todos los días</p>
           <p>☀️ <strong>10:30am a 01:30am🌙</strong></p>
+          <p><strong>📍 Blvd. Almafuerte 718.</strong> Pergamino, Buenos Aires.</p>
         </div>
       </div>
 
