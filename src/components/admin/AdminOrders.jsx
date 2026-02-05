@@ -21,8 +21,7 @@ import { archiveOrderWithStock } from "../../services/orders.service.js";
 import { useGustos } from "../../hooks/useGustos.js";
 import "../../styles/AdminOrders.scss";
 import AdminLocalOrderModal from "./AdminLocalOrderModal.jsx";
-
-
+import { secureSeedFirestore } from "../../utils/secureSeedFirestore.js";
 
 /* =====================
    CONSTANTS
@@ -673,6 +672,20 @@ const AdminOrders = () => {
 
   return (
     <main className="admin-orders">
+      <button
+        onClick={async () => {
+          try {
+            await secureSeedFirestore();
+            alert("Base creada ✅");
+          } catch (err) {
+            console.error(err);
+            alert("Error, mirá consola");
+          }
+        }}
+      >
+        Inicializar Base
+      </button>
+
       <audio ref={audioRef} src="/sounds/new-order.wav" preload="auto" />
       <audio
         ref={takenAudioRef}
