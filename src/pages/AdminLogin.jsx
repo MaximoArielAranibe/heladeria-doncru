@@ -19,6 +19,7 @@ const AdminLogin = () => {
       navigate("/admin");
     } catch (err) {
       setError("Credenciales incorrectas", err);
+      console.error(err);
     }
   };
 
