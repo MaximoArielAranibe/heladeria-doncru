@@ -44,6 +44,7 @@ function App() {
         <Route path="/postres" element={<Postres />} />
         <Route path="/carrito" element={<Carrito />} />
         <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/contacto" element={<Footer />} />
 
         {/* ADMIN */}
         <Route
