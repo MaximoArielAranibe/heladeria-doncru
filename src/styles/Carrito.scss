@@ -149,10 +149,14 @@
    MODAL
 ============================= */
 
+/* =============================
+   MODAL
+============================= */
+
 .carrito-modal-overlay {
   position: fixed;
   inset: 0;
-  z-index: 50;
+  z-index: 9999;
 
   background: rgba(0, 0, 0, 0.45);
   backdrop-filter: blur(4px);
@@ -161,43 +165,72 @@
   align-items: center;
   justify-content: center;
 
-  padding: 1rem;
+  padding: 0.75rem;
 }
 
-/* 👉 CLAVE: modal scrolleable */
+/* CONTENEDOR PRINCIPAL */
 
 .carrito-modal {
-  margin-top: 200px;
   width: 100%;
   max-width: 420px;
 
-  max-height: 90vh;          // 🔹 no se sale de pantalla
-  overflow-y: auto;         // 🔹 scroll interno
+  height: 90vh;
+  min-height: max-content;
 
-  padding: 1.2rem;
+  display: flex;
+  flex-direction: column;
+
+  background: #fff;
   border-radius: 14px;
 
-  background: rgba(255, 255, 255, 0.95);
+  overflow: hidden;
 
   box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
 
   animation: carritoScaleIn 0.25s ease;
+}
 
-  h3 {
-    margin: 0 0 0.8rem;
-    font-size: 1.2rem;
-  }
+/* HEADER */
 
-  &__actions {
-    display: flex;
-    flex-direction: column;
-    gap: 0.6rem;
+.carrito-modal h3 {
+  padding: 1rem 1rem 0.5rem;
 
-    button {
-      width: 100%;
-    }
+  margin: 0;
+
+  font-size: 1.2rem;
+  font-weight: 700;
+
+  flex-shrink: 0;
+}
+
+/* BODY SCROLLEABLE */
+
+.carrito-modal__body {
+  flex: 1;
+  overflow-y: auto;
+
+  padding: 0 1rem 1rem;
+}
+
+/* FOOTER FIJO */
+
+.carrito-modal__actions {
+  padding: 0.8rem 1rem 1rem;
+
+  display: flex;
+  gap: 0.6rem;
+
+  border-top: 1px solid #eee;
+
+  background: #fff;
+
+  flex-shrink: 0;
+
+  button {
+    width: 100%;
   }
 }
+
 
 /* =============================
    FORM
@@ -321,11 +354,59 @@
 
   .carrito-modal {
     padding: 1.5rem;
+    overflow: auto;
   }
 }
+
 
 @media (min-width: 1024px) {
   .carrito {
     padding: 8rem 2rem;
   }
+}
+
+.carrito-modal__body {
+  flex: 1;              // ocupa todo
+  overflow-y: auto;     // scroll real
+  padding: 0 1rem;
+}
+
+/* =============================
+   SUCCESS STATE
+============================= */
+
+/* =============================
+   SUCCESS MODAL
+============================= */
+
+.carrito-modal.is-success {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+  padding: 1.5rem;
+}
+
+.carrito-modal.is-success .order-success {
+  width: 100%;
+  max-width: 320px;
+
+  padding: 2rem 1.5rem;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.2rem;
+
+  text-align: center;
+}
+
+/* Botón success */
+
+.carrito-modal.is-success .order-success .btn {
+  width: 100%;
+  max-width: 260px;
+
+
 }

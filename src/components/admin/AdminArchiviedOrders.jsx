@@ -197,7 +197,6 @@ const AdminArchivedOrders = () => {
       ===================== */}
 
       {orders.map((order) => {
-
         const productsTotal = order.total ?? 0;
         const shipping = order.shipping?.final ?? 0;
         const finalTotal = productsTotal + shipping;

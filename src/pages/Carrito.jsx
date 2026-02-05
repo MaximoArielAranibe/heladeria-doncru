@@ -209,116 +209,204 @@ const Carrito = () => {
 
       {isModalOpen && (
         <div className="carrito-modal-overlay" onClick={() => setIsModalOpen(false)}>
-          <div className="carrito-modal" onClick={(e) => e.stopPropagation()}>
+          <div
+            className={`carrito-modal ${orderSent ? "is-success" : ""}`}
+            onClick={(e) => e.stopPropagation()}
+          >
             {!orderSent ? (
               <>
+                {/* HEADER */}
                 <h3>Datos del pedido</h3>
-                <p> 🚚 <strong>Envío:</strong> Dentro de los 4 bulevares el costo es de <strong>$2.000</strong>. Fuera de esa zona, el valor se ajusta según la distancia. <strong>SE CONFIRMA POR WHATSAPP.</strong></p>
 
-                <div className="carrito-form">
-                  <input placeholder="Tu nombre" onBlur={(e) => (nameRef.current = e.target.value)} />
-                  <input
-                    placeholder="Tu teléfono"
-                    onBlur={(e) => {
-                      phoneRef.current = e.target.value;
-                      setPhoneError("");
-                    }}
-                  />
-                  {envio === "conenvio" && (<input placeholder="Tu dirección" onBlur={(e) => (directionRef.current = e.target.value)} />)}
+                {/* BODY */}
+                <div className="carrito-modal__body">
 
-                  <textarea maxLength={200} placeholder="Comentarios adicionales (ej: Porton negro, timbre roto, llamar antes, etc.)" rows={3} onChange={(e) => setComments(e.target.value)} />
-                  <small>{comments.length}/200</small>
+                  <p>
+                    🚚 <strong>Envío:</strong> Dentro de los 4 bulevares el costo es de{" "}
+                    <strong>$2.000</strong>. Fuera de esa zona, el valor se ajusta según la
+                    distancia. <strong>SE CONFIRMA POR WHATSAPP.</strong>
+                  </p>
 
-                  <div className="carrito-radiobuttons-container">
-                    <div>
+                  <div className="carrito-form">
+
+                    <input
+                      placeholder="Tu nombre"
+                      onBlur={(e) => (nameRef.current = e.target.value)}
+                    />
+
+                    <input
+                      placeholder="Tu teléfono"
+                      onBlur={(e) => {
+                        phoneRef.current = e.target.value;
+                        setPhoneError("");
+                      }}
+                    />
+
+                    {envio === "conenvio" && (
                       <input
-                        type="radio"
-                        id="envio"
-                        name="envio-sinenvio"
-                        value="conenvio"
-                        onChange={handleEnvio}
-                        checked={envio === "conenvio"} />
-                      <label htmlFor="envio">Con envío</label>
+                        placeholder="Tu dirección"
+                        onBlur={(e) => (directionRef.current = e.target.value)}
+                      />
+                    )}
+
+                    <textarea
+                      maxLength={200}
+                      placeholder="Comentarios adicionales (ej: Porton negro, timbre roto, llamar antes, etc.)"
+                      rows={3}
+                      onChange={(e) => setComments(e.target.value)}
+                    />
+
+                    <small>{comments.length}/200</small>
+
+                    {/* ENVIO */}
+
+                    <div className="carrito-radiobuttons-container">
+                      <div>
+                        <input
+                          type="radio"
+                          id="envio"
+                          name="envio-sinenvio"
+                          value="conenvio"
+                          onChange={handleEnvio}
+                          checked={envio === "conenvio"}
+                        />
+                        <label htmlFor="envio">Con envío</label>
+                      </div>
+
+                      <div>
+                        <input
+                          type="radio"
+                          id="sinenvio"
+                          name="envio-sinenvio"
+                          value="sinenvio"
+                          onChange={handleEnvio}
+                          checked={envio === "sinenvio"}
+                        />
+                        <label htmlFor="sinenvio">Paso a retirar</label>
+                      </div>
                     </div>
-                    <div>
-                      <input
-                        type="radio"
-                        id="sinenvio"
-                        name="envio-sinenvio"
-                        value="sinenvio"
-                        onChange={handleEnvio}
-                        checked={envio === "sinenvio"} />
-                      <label htmlFor="sinenvio">Paso a retirar</label>
+
+                    {/* PAGO */}
+
+                    <div className="carrito-payment-method">
+                      <p>
+                        <strong>Forma de pago</strong>
+                      </p>
+
+                      <div className="carrito-radiobuttons-container">
+                        <div>
+                          <input
+                            type="radio"
+                            id="efectivo"
+                            name="payment"
+                            value="efectivo"
+                            checked={paymentMethod === "efectivo"}
+                            onChange={(e) =>
+                              setPaymentMethod(e.target.value)
+                            }
+                          />
+                          <label htmlFor="efectivo">
+                            💵 Efectivo
+                          </label>
+                        </div>
+
+                        <div>
+                          <input
+                            type="radio"
+                            id="transferencia"
+                            name="payment"
+                            value="transferencia"
+                            checked={paymentMethod === "transferencia"}
+                            onChange={(e) =>
+                              setPaymentMethod(e.target.value)
+                            }
+                          />
+                          <label htmlFor="transferencia">
+                            💳 Transferencia
+                          </label>
+                        </div>
+                      </div>
                     </div>
+
+                    {/* ZONA */}
+
+                    {envio === "conenvio" && (
+                      <div>
+
+                        <p>Elige una zona aproximada</p>
+
+                        <select
+                          value={zone}
+                          onChange={(e) =>
+                            setZone(e.target.value)
+                          }
+                        >
+                          <option value="centro">
+                            Dentro de los 4 bulevares ($2000)
+                          </option>
+
+                          <option value="media">
+                            Zona intermedia ($2500)
+                          </option>
+
+                          <option value="lejana">
+                            Zona lejana ($3000)
+                          </option>
+
+                          <option value="muylejana">
+                            Zona muy lejana
+                          </option>
+                        </select>
+
+                      </div>
+                    )}
+
+                    {phoneError && (
+                      <span className="form-error">
+                        {phoneError}
+                      </span>
+                    )}
+
                   </div>
-
-                  <div className="carrito-payment-method">
-  <p><strong>Forma de pago</strong></p>
-
-  <div className="carrito-radiobuttons-container">
-    <div>
-      <input
-        type="radio"
-        id="efectivo"
-        name="payment"
-        value="efectivo"
-        checked={paymentMethod === "efectivo"}
-        onChange={(e) => setPaymentMethod(e.target.value)}
-      />
-      <label htmlFor="efectivo">💵 Efectivo</label>
-    </div>
-
-    <div>
-      <input
-        type="radio"
-        id="transferencia"
-        name="payment"
-        value="transferencia"
-        checked={paymentMethod === "transferencia"}
-        onChange={(e) => setPaymentMethod(e.target.value)}
-      />
-      <label htmlFor="transferencia">💳 Transferencia</label>
-    </div>
-  </div>
-</div>
-
-
-                  {envio === "conenvio" && (
-                    <div className="">
-
-                      <p>Elige una zona aproximada</p>
-                      <select value={zone} onChange={(e) => setZone(e.target.value)}>
-                        <option value="centro">Dentro de los 4 bulevares ($2000)</option>
-                        <option value="media">Zona intermedia ($2500)</option>
-                        <option value="lejana">Zona lejana ($3000)</option>
-                        <option value="muylejana">Zona muy lejana</option>
-                      </select>
-                    </div>
-                  )}
-
-
-                  {phoneError && <span className="form-error">{phoneError}</span>}
                 </div>
 
+                {/* FOOTER */}
+
                 <div className="carrito-modal__actions">
-                  <button className="btn btn--secondary" onClick={() => setIsModalOpen(false)}>
+
+                  <button
+                    className="btn btn--secondary"
+                    onClick={() => setIsModalOpen(false)}
+                  >
                     Volver
                   </button>
-                  <button className="btn btn--primary" onClick={handleConfirm}>
+
+                  <button
+                    className="btn btn--primary"
+                    onClick={handleConfirm}
+                  >
                     Confirmar pedido
                   </button>
+
                 </div>
               </>
             ) : (
               <div className="order-success">
+
                 <h3>¡Pedido enviado! 🎉</h3>
+
                 <p>Te contactamos por WhatsApp.</p>
-                <Link to="/" className="btn btn--primary">
-                  Volver al inicio
-                </Link>
+
+                <div className="">
+                  <Link to="/" className="btn btn--primary">
+                    Volver al inicio
+                  </Link>
+                </div>
+
               </div>
             )}
           </div>
+
         </div>
       )}
     </section>

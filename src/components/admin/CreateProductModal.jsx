@@ -72,7 +72,7 @@ const CreateProductModal = ({
     if (!form.title.trim()) return "Nombre obligatorio";
     if (!form.price || Number(form.price) <= 0)
       return "Precio inválido";
-    if (!form.maxGustos || Number(form.maxGustos) <= 0)
+    if (!form.maxGustos || Number(form.maxGustos) < 0)
       return "Máx gustos inválido";
     if (!imageFile) return "Imagen obligatoria";
     return null;
@@ -136,6 +136,18 @@ const CreateProductModal = ({
               className="create-product-modal__form"
               onSubmit={handleSubmit}
             >
+              <div>
+                <p>Categorías:</p>
+                <select
+                  name="category"
+                  value={form.category}
+                  onChange={handleChange}
+                >
+                  <option value="tamaños">Tamaños</option>
+                  <option value="postres">Postres</option>
+                </select>
+              </div>
+
               {form.category === "tamaños" ? (
                 <select
                   name="title"
@@ -182,17 +194,6 @@ const CreateProductModal = ({
                 onChange={handleChange}
               />
 
-              <div>
-                <p>Categorías:</p>
-                <select
-                  name="category"
-                  value={form.category}
-                  onChange={handleChange}
-                >
-                  <option value="tamaños">Tamaños</option>
-                  <option value="postres">Postres</option>
-                </select>
-              </div>
 
               {/* 📸 IMAGEN */}
               <div

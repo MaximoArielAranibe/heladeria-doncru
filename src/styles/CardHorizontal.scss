@@ -1,13 +1,21 @@
-@use "../styles/variables.scss"as *;
+@use "../styles/variables.scss" as *;
+
+/* =====================
+   CARD BASE
+===================== */
 
 .card {
   position: relative;
   font-family: $font-primary;
   display: flex;
   align-items: center;
+
   width: 92%;
   max-width: 343px;
   height: 150px;
+
+  margin: 0 auto;
+
   border-radius: 24px;
   overflow: hidden;
 
@@ -16,18 +24,11 @@
 
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
 
-  transition:
-    transform 0.3s ease,
-    box-shadow 0.3s ease,
-    border-color 0.3s ease;
+  transition: all 0.3s ease;
 
-  will-change: transform, box-shadow;
-
-  /* ---------- HOVER ---------- */
   &:hover {
     transform: translateY(-4px);
-    box-shadow:
-      0 10px 22px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.12);
     border-color: $primary-pink;
   }
 
@@ -45,11 +46,7 @@
     position: absolute;
     top: 10px;
     left: 10px;
-    z-index: 2;
-    pointer-events: none;
-    user-select: none;
-
-    filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.25));
+    z-index: 5;
   }
 
   /* ---------- IMAGE ---------- */
@@ -57,8 +54,10 @@
     width: 120px;
     height: 100%;
     object-fit: cover;
+
     border-radius: 24px 0 0 24px;
-    transition: transform 0.35s ease;
+
+    transition: transform 0.3s ease;
   }
 
   &:hover &__img {
@@ -69,11 +68,14 @@
   &__texts {
     flex: 1;
     padding: 0 1rem;
+
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 10px;
+
+    gap: 8px;
+    text-align: center;
 
     &__title {
       margin: 0;
@@ -98,230 +100,215 @@
     }
 
     &__button {
-      margin-top: 0.4rem;
-      transition: transform 0.25s ease;
+      margin-top: 4px;
     }
-  }
-
-  &:hover &__texts__button {
-    transform: translateY(-2px);
   }
 }
 
-/* ---------- GLASS (LIMPIO, SIN GLOW) ---------- */
+/* =====================
+   GLASS EFFECT
+===================== */
+
 .card--glass {
   background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
 
   border: 1px solid rgba(255, 104, 196, 0.3);
 
   box-shadow:
     0 8px 24px rgba(0, 0, 0, 0.15),
     inset 0 0 0 1px rgba(255, 255, 255, 0.25);
-
-  .card__img {
-    filter: saturate(1.05) contrast(1.05);
-  }
 }
 
-/* ---------- DESKTOP ---------- */
-@media (min-width: 1024px) {
-  .card {
-    height: 180px;
-
-    &__texts {
-      justify-content: space-evenly;
-
-      &__title {
-        font-size: 16px;
-        text-transform: uppercase;
-        margin-top: 1rem;
-      }
-
-      &__subtitle {
-        font-size: 14px;
-      }
-
-      &__p {
-        font-size: 14px;
-        font-weight: 400;
-      }
-
-      &__button {
-        height: 32px;
-        margin-bottom: 0.4rem;
-      }
-    }
-  }
-}
-
-
 /* =====================
-  ADMIN PRICE EDIT (FIX)
-===================== */
-/* =====================
-   ADMIN PRICE EDIT
+   IMAGE UPLOAD OVERLAY
 ===================== */
 
-.card__price-edit {
+.card__image-upload {
   position: absolute;
-  top: 115px;
-  left: 60px;
-  z-index: 3;
+  inset: 0;
+  z-index: 6;
 
   display: flex;
   align-items: center;
-  gap: 6px;
-
-  padding: 6px 8px;
-  border-radius: 12px;
+  justify-content: center;
 
   background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(6px);
 
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+  border-radius: 24px;
+  border: 2px dashed $primary-pink;
 
-  input {
-    width: 72px;
-    padding: 4px 6px;
-    font-size: 13px;
-    font-weight: 600;
-    border-radius: 8px;
-    border: 1px solid #e5e7eb;
-    text-align: center;
+  cursor: pointer;
+
+  transition: all 0.25s ease;
+
+  &:hover {
+    background: rgba(255, 240, 248, 0.95);
+    border-color: $accent-pink;
   }
 
-  button {
-    padding: 4px 8px;
-    font-size: 12px;
+  &.is-dragging {
+    background: rgba(255, 200, 230, 0.25);
+    border-color: $primary-pink;
+    transform: scale(1.02);
+  }
+
+  label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    gap: 6px;
+
+    cursor: pointer;
+    text-align: center;
+
     font-weight: 600;
+    color: $primary-pink;
+  }
+}
+
+/* =====================
+   IMAGE PREVIEW
+===================== */
+
+.card__image-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  gap: 8px;
+
+  img {
+    width: 160px;
+    height: 100px;
+
+    object-fit: cover;
+    border-radius: 12px;
+  }
+}
+
+.card__image-actions {
+  display: flex;
+  gap: 8px;
+
+  button {
+    padding: 4px 10px;
+
     border-radius: 8px;
     border: none;
+
     cursor: pointer;
+
+    font-size: 12px;
+    font-weight: 600;
+
     background: #111;
     color: #fff;
-
-    &:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
 
     &.cancel {
       background: #e5e7eb;
       color: #111;
     }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
   }
 }
-
-/* 👉 cuando la card está invertida */
-.card__price-edit--right {
-  left: auto;
-  right: 40px;
-}
-
-.card__edit-price-btn {
-  margin-top: 2px;
-  font-size: 12px;
-  font-weight: 600;
-  color: #dc2626;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-
-  &:hover {
-    text-decoration: underline;
-  }
-}
-
-@media(min-width: 1024px){
-
-  .card{
-    width: 343px;
-  }
-
-  .card__price-edit{
-    top: 9rem;
-    left: 8rem;
-    right: auto;
-
-  }
-  .card__price-edit--right {
-      top: 9rem;
-    left: auto;
-    right: 8rem;
-  }
-
-}
-
-.card__admin-actions {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 6px;
-}
-
-.card__delete-btn {
-  background: transparent;
-  border: none;
-  color: #ef4444;
-  font-weight: 600;
-  cursor: pointer;
-  font-size: 13px;
-
-  &:hover {
-    text-decoration: underline;
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-}
-
 
 /* =====================
-   ADMIN DELETE ICON
+   ADMIN BUTTONS
 ===================== */
+
+.card__edit-price-btn,
+.card__edit-image-btn {
+  background: transparent;
+  border: none;
+
+  font-size: 12px;
+  font-weight: 600;
+
+  cursor: pointer;
+  color: #dc2626;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
 
 .card__delete-icon {
   position: absolute;
   top: 10px;
   right: 10px;
-  z-index: 5;
+
+  z-index: 7;
 
   width: 32px;
   height: 32px;
+
   border-radius: 50%;
 
   background: rgba(255, 255, 255, 0.9);
+
   border: none;
 
   display: flex;
   align-items: center;
   justify-content: center;
 
-  font-size: 14px;
   cursor: pointer;
 
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
 
-  transition:
-    background 0.2s ease,
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
+  transition: all 0.2s ease;
 
   &:hover {
     background: #fee2e2;
-    transform: scale(1.08);
-    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.2);
-  }
-
-  &:active {
-    transform: scale(0.95);
+    transform: scale(1.1);
   }
 
   &:disabled {
     opacity: 0.5;
-    cursor: not-allowed;
+  }
+}
+
+/* =====================
+   DESKTOP UPGRADE
+===================== */
+
+@media (min-width: 1280px) {
+  .card {
+    width: 100%;
+    max-width: 420px;
+    height: 210px;
+  }
+
+  .card__img {
+    width: 160px;
+  }
+
+  .card__texts {
+    gap: 18px;
+
+    &__title {
+      font-size: 17px;
+    }
+
+    &__subtitle {
+      font-size: 16px;
+      font-weight: 500;
+    }
+
+    &__p {
+      font-size: 14px;
+    }
+  }
+
+  .card__texts__button {
+    min-height: 38px;
+    font-size: 14px;
   }
 }

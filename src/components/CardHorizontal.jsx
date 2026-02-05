@@ -1,15 +1,22 @@
 import { useState } from "react";
 import "../styles/CardHorizontal.scss";
+
 import foto from "../assets/vertical-11.jpeg";
+
 import Button from "./Button";
 import StarBadge from "./StarBadge";
 import SelectGustosModal from "./SelectGustosModal";
+
 import { useAuth } from "../hooks/useAuth";
-import { useCart } from "../context/useCart"; // ✅ NUEVO
+import { useCart } from "../context/useCart";
+
 import {
-  updateProductPrice,
+  updateProductImage,
   deleteProduct,
 } from "../services/products.service";
+
+import { uploadProductImage } from "../services/uploadImage.service";
+
 import toast from "react-hot-toast";
 
 const CardHorizontal = ({
@@ -23,22 +30,110 @@ const CardHorizontal = ({
   const { role } = useAuth();
   const isAdmin = role === "admin";
 
-  const { addToCart } = useCart(); // ✅ NUEVO
+  const { addToCart } = useCart();
+
+  /* =====================
+     STATES
+  ===================== */
 
   const [openModal, setOpenModal] = useState(false);
-  const [editingPrice, setEditingPrice] = useState(false);
-  const [localPrice, setLocalPrice] = useState(price);
+
+  const [editingImage, setEditingImage] = useState(false);
+
+  const [dragging, setDragging] = useState(false);
+
+  const [imageFile, setImageFile] = useState(null);
+  const [preview, setPreview] = useState(null);
+
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  const imageSrc = thumbnail && thumbnail !== "" ? thumbnail : foto;
+  /* =====================
+     IMAGE SRC
+  ===================== */
+
+  const imageSrc = preview
+    ? preview
+    : thumbnail && thumbnail !== ""
+    ? thumbnail
+    : foto;
 
   /* =====================
-     PEDIR AHORA (LÓGICA NUEVA)
+     IMAGE HANDLER
   ===================== */
+
+  const handleImage = (file) => {
+    if (!file) return;
+
+    setImageFile(file);
+    setPreview(URL.createObjectURL(file));
+  };
+
+  /* =====================
+     SAVE IMAGE
+  ===================== */
+
+  const handleSaveImage = async () => {
+    if (!product?.id || !imageFile) {
+      toast.error("Seleccioná una imagen");
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      const url = await uploadProductImage(imageFile);
+
+      await updateProductImage(product.id, url);
+
+      toast.success("Imagen actualizada 📷");
+
+      setEditingImage(false);
+      setImageFile(null);
+      setPreview(null);
+
+    } catch (err) {
+      console.error(err);
+      toast.error("Error al subir imagen");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  /* =====================
+     DELETE
+  ===================== */
+
+  const handleDelete = async () => {
+    if (!product?.id) return;
+
+    const ok = window.confirm(
+      `¿Eliminar "${title}"?`
+    );
+
+    if (!ok) return;
+
+    try {
+      setDeleting(true);
+
+      await deleteProduct(product.id);
+
+      toast.success("Producto eliminado 🗑️");
+
+    } catch (err) {
+      console.error(err);
+      toast.error("Error al eliminar");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  /* =====================
+     ORDER
+  ===================== */
+
   const handleOrder = () => {
     if (product?.category === "postres") {
-      // 🧁 POSTRE → DIRECTO AL CARRITO
       addToCart({
         ...product,
         price,
@@ -46,50 +141,16 @@ const CardHorizontal = ({
         gustos: [],
       });
 
-      toast.success("Postre agregado al carrito 🧁");
+      toast.success("Postre agregado 🧁");
       return;
     }
 
-    // 🍦 TAMAÑOS → ABRIR MODAL DE GUSTOS
     setOpenModal(true);
   };
 
-  const handleSavePrice = async () => {
-    if (!product?.id) return;
-
-    try {
-      setSaving(true);
-      await updateProductPrice(product.id, Number(localPrice));
-      toast.success("Precio actualizado 💰");
-      setEditingPrice(false);
-    } catch (err) {
-      toast.error("Error al actualizar el precio");
-      console.error(err);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!product?.id) return;
-
-    const confirmed = window.confirm(
-      `¿Eliminar "${title}"?\nEsta acción no se puede deshacer.`
-    );
-
-    if (!confirmed) return;
-
-    try {
-      setDeleting(true);
-      await deleteProduct(product.id);
-      toast.success("Producto eliminado 🗑️");
-    } catch (err) {
-      console.error(err);
-      toast.error("Error al eliminar producto");
-    } finally {
-      setDeleting(false);
-    }
-  };
+  /* =====================
+     RENDER
+  ===================== */
 
   return (
     <>
@@ -100,92 +161,159 @@ const CardHorizontal = ({
           ${featured ? "card--glass" : ""}
         `}
       >
-
-
-        {product.featured && (
-          <StarBadge className="card__badge" size={32} />
+        {product?.featured && (
+          <StarBadge
+            className="card__badge"
+            size={32}
+          />
         )}
 
-        {/* 🔧 ADMIN PRICE EDIT */}
-        {isAdmin && editingPrice && (
+        {/* =====================
+            EDIT IMAGE
+        ===================== */}
+
+        {isAdmin && editingImage && (
           <div
-            className={`card__price-edit ${imageRight ? "card__price-edit--right" : ""
-              }`}
+            className={`card__image-upload ${
+              dragging ? "is-dragging" : ""
+            }`}
+            onDragOver={(e) => {
+              e.preventDefault();
+              setDragging(true);
+            }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDragging(false);
+              handleImage(e.dataTransfer.files[0]);
+            }}
           >
             <input
-              type="number"
-              min="0"
-              value={localPrice}
-              onChange={(e) => setLocalPrice(e.target.value)}
+              type="file"
+              hidden
+              accept="image/*"
+              id={`edit-${product.id}`}
+              onChange={(e) =>
+                handleImage(e.target.files[0])
+              }
             />
 
-            <button onClick={handleSavePrice} disabled={saving}>
-              {saving ? "Guardando…" : "Guardar"}
-            </button>
+            {!preview ? (
+              <label htmlFor={`edit-${product.id}`}>
+                <span style={{ fontSize: 32 }}>📤</span>
 
-            <button
-              className="cancel"
-              onClick={() => setEditingPrice(false)}
-            >
-              ✕
-            </button>
+                <span>Arrastrá tu imagen</span>
+
+                <small
+                  style={{
+                    fontSize: 12,
+                    opacity: 0.7,
+                  }}
+                >
+                  o hacé click para seleccionar
+                </small>
+              </label>
+            ) : (
+              <div className="card__image-preview">
+                <img src={preview} alt="preview" />
+
+                <div className="card__image-actions">
+                  <button
+                    onClick={handleSaveImage}
+                    disabled={saving}
+                  >
+                    {saving
+                      ? "Subiendo…"
+                      : "Guardar"}
+                  </button>
+
+                  <button
+                    className="cancel"
+                    onClick={() => {
+                      setEditingImage(false);
+                      setPreview(null);
+                      setImageFile(null);
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
+
+        {/* =====================
+            IMAGE
+        ===================== */}
 
         <img
           src={imageSrc}
           alt={title}
           className="card__img"
-          onError={(e) => (e.target.src = foto)}
+          onError={(e) =>
+            (e.target.src = foto)
+          }
         />
 
+        {/* =====================
+            TEXTS
+        ===================== */}
+
         <div className="card__texts">
-          <h4 className="card__texts__title">{title}</h4>
+          <h4 className="card__texts__title">
+            {title}
+          </h4>
 
-          {!editingPrice && (
-            <p className="card__texts__subtitle">
-              A tan solo ${price}
-            </p>
-          )}
+          <p className="card__texts__subtitle">
+            A tan solo ${price}
+          </p>
 
-          {isAdmin && !editingPrice && (
+          {isAdmin && !editingImage && (
             <>
               <button
-                className="card__edit-price-btn"
-                onClick={() => setEditingPrice(true)}
+                className="card__edit-image-btn"
+                onClick={() =>
+                  setEditingImage(true)
+                }
               >
-                ✏️ Editar precio
+                📷 Imagen
               </button>
 
               <button
                 className="card__delete-icon"
                 onClick={handleDelete}
                 disabled={deleting}
-                title="Eliminar producto"
               >
                 🗑️
               </button>
             </>
           )}
 
-          <p className="card__texts__p">¿Te lo pensás perder?</p>
+          <p className="card__texts__p">
+            ¿Te lo pensás perder?
+          </p>
 
           <Button
             text="Pedir ahora"
-            onClick={handleOrder} // ✅ CAMBIO CLAVE
+            onClick={handleOrder}
             className="card__texts__button"
           />
         </div>
       </div>
 
-      {/* 🍦 SOLO TAMAÑOS ABREN MODAL */}
-      {product && product.category !== "postres" && (
-        <SelectGustosModal
-          product={{ ...product, price }}
-          open={openModal}
-          onClose={() => setOpenModal(false)}
-        />
-      )}
+      {/* =====================
+          MODAL
+      ===================== */}
+
+      {product &&
+        product.category !== "postres" && (
+          <SelectGustosModal
+            product={{ ...product, price }}
+            open={openModal}
+            onClose={() => setOpenModal(false)}
+          />
+        )}
     </>
   );
 };

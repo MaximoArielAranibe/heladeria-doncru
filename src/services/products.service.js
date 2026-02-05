@@ -12,6 +12,14 @@ export const updateProductPrice = async (productId, newPrice) => {
   });
 };
 
+export const updateProductImage = async (id, imageUrl) => {
+  if (!id) throw new Error("Missing product id");
+
+  await updateDoc(doc(db, "products", id), {
+    thumbnail: imageUrl,
+    updatedAt: new Date(),
+  });
+};
 
 export const createProduct = async (product) => {
   const docRef = await addDoc(collection(db, "products"), {

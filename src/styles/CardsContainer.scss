@@ -42,14 +42,15 @@
 /* 💻 Desktop */
 @media (min-width: 1024px) {
   .cards__container {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(420px, 1fr));
 
-    /* 👇 CLAVES */
-    max-width: 780px; // 🔑 achica el contenedor
-    column-gap: 2rem; // 🔑 separación horizontal real
+    max-width: 100%;
+    width: min(1200px, 100%);
+
     row-gap: 3rem;
 
     margin: 5rem auto;
-  }
 
+    justify-content: center;
+  }
 }

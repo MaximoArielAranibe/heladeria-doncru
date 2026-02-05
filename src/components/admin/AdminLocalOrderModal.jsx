@@ -64,7 +64,7 @@ const AdminLocalOrderModal = ({ open, onClose }) => {
         customer: {
           name: "Venta local",
           phone: "",
-          direction: "Retiro en local",
+          direction: "",
         },
 
         items: cart,

@@ -79,6 +79,9 @@ export const getMetrics = async () => {
       archivedCount++;
     }
 
+    // ⚠️ IMPORTANTE:
+// total = solo productos
+// shipping = delivery (NO caja)
     const orderTotal = normalizeNumber(order.total);
     if (orderTotal <= 0) return;
 

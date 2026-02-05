@@ -64,6 +64,12 @@ const AdminOrders = () => {
   const [shippingDraft, setShippingDraft] = useState({});
   const [newOrders, setNewOrders] = useState(0);
   const [openLocalOrder, setOpenLocalOrder] = useState(false);
+  const [askAddressFor, setAskAddressFor] = useState(null);
+  const [addressDraft, setAddressDraft] = useState("");
+  const [pendingShippingOrder, setPendingShippingOrder] = useState(null);
+  const [isEditingAddress, setIsEditingAddress] = useState(false);
+  const takenAudioRef = useRef(null);
+  const previousTakenRef = useRef(new Set());
 
 
 
@@ -97,6 +103,18 @@ const AdminOrders = () => {
 
     previousCountRef.current = count;
   };
+
+  const playTakenSound = (orders) => {
+    orders.forEach((order) => {
+      const isTaken = !!order.payment?.paidBy;
+
+      if (isTaken && !previousTakenRef.current.has(order.id)) {
+        takenAudioRef.current?.play().catch(() => { });
+        previousTakenRef.current.add(order.id);
+      }
+    });
+  };
+
 
 
   const getBranchByEmail = (email) => {
@@ -166,6 +184,14 @@ const AdminOrders = () => {
               });
 
 
+            if (previousTakenRef.current.size === 0) {
+              data.forEach(o => {
+                if (o.payment?.paidBy) {
+                  previousTakenRef.current.add(o.id);
+                }
+              });
+            }
+
             /* =====================
                NUEVOS PEDIDOS
             ===================== */
@@ -178,7 +204,19 @@ const AdminOrders = () => {
                NO TOCAR AUDIO
             ===================== */
 
+            // Limpia pedidos que ya no existen
+            const currentIds = new Set(data.map(o => o.id));
+
+            previousTakenRef.current.forEach((id) => {
+              if (!currentIds.has(id)) {
+                previousTakenRef.current.delete(id);
+              }
+            });
+
+
             playNewOrderSound(data.length);
+            playTakenSound(data);
+
 
             setOrders(data);
             setFetchError(null);
@@ -225,7 +263,7 @@ const AdminOrders = () => {
 
       await logOrderEvent({
         orderId: order.id,
-        type: "STATUS_CHANGED",
+        type: "STATUS CAMBIADO",
         from: order.status,
         to: status,
         meta: {
@@ -254,49 +292,117 @@ const AdminOrders = () => {
 
 
   const updateShipping = useCallback(async (order) => {
-    const value = shippingDraft[order.id];
+    const value = Number(shippingDraft[order.id]);
+
+    /* =====================
+       VALIDACIÓN
+    ===================== */
 
     if (!value || value <= 0) {
       toast.error("Monto inválido");
       return;
     }
 
+    /* =====================
+       SI ERA PICKUP Y NO TIENE DIRECCIÓN
+    ===================== */
+    const hasValidAddress =
+      order.customer?.direction &&
+      order.customer.direction.trim() !== "" &&
+      order.customer.direction !== "Retiro en local";
+
+    if (!hasValidAddress) {
+      setAskAddressFor(order);
+      setAddressDraft("");
+      setPendingShippingOrder(order);
+      return;
+    }
+
     try {
       const user = auth.currentUser;
 
+      /* =====================
+         UPDATE FIRESTORE
+      ===================== */
+
+      const productsTotal = order.total ?? 0;
+      const finalTotal = productsTotal + value;
+
       await updateDoc(doc(db, "orders", order.id), {
         "shipping.final": value,
+
+        deliveryType: "delivery",
+        totalWithShipping: finalTotal,
+
+        // 👇 TOMADO AUTOMÁTICAMENTE
+        "payment.paidBy": user?.email || "Admin",
+        "payment.takenAt": serverTimestamp(),
+
         "shipping.sentBy": user?.email || "Admin",
         "shipping.sentAt": serverTimestamp(),
+
         status: "cost_send",
         updatedAt: serverTimestamp(),
       });
 
+
+
+      /* =====================
+         LOG EVENTO
+      ===================== */
+
+      // ✅ LOG: pedido tomado (solo si no estaba tomado antes)
+      if (!order.payment?.paidBy) {
+        await logOrderEvent({
+          orderId: order.id,
+          type: "ORDER_TAKEN",
+          meta: {
+            takenBy: user?.email || "Admin",
+            via: "shipping_cost",
+          },
+        });
+      }
+
+
       await logOrderEvent({
         orderId: order.id,
-        type: "SHIPPING_ADJUSTED",
+        type: "ENVIO AJUSTADO",
         meta: {
           to: value,
-          changedBy: auth.currentUser?.email || "Admin"
+          previousType: order.deliveryType || null,
+          changedBy: user?.email || "Admin",
         },
-
       });
 
-      sendWhatsAppMessage(
-        order.customer?.phone,
-        buildShippingMessage(order, value, getGustoName),
-        order.id
-      );
+      /* =====================
+         WHATSAPP
+      ===================== */
 
-      setShippingDraft((p) => ({ ...p, [order.id]: value }));
+      if (order.customer?.phone) {
+        await sendWhatsAppMessage(
+          order.customer.phone,
+          buildShippingMessage(order, value, getGustoName),
+          order.id
+        );
+      }
 
-      toast.success("Costo enviado 🚚");
+      /* =====================
+         LIMPIAR INPUT
+      ===================== */
+
+      setShippingDraft((p) => ({
+        ...p,
+        [order.id]: value,
+      }));
+
+      toast.success("Costo de envío enviado 🚚");
 
     } catch (err) {
-      console.error(err);
-      toast.error("Error envío");
+      console.error("updateShipping error:", err);
+      toast.error("Error al enviar costo");
     }
-  }, [shippingDraft]);
+  }, [shippingDraft, getGustoName]);
+
 
   const markAsPaid = useCallback(async (orderId) => {
     try {
@@ -322,28 +428,35 @@ const AdminOrders = () => {
 
       await updateDoc(doc(db, "orders", order.id), {
         deliveryType: "pickup",
+
+        // 🔥 RESET ENVÍO
         "shipping.final": 0,
+        totalWithShipping: null,
+
         "shipping.sentBy": user?.email || "Admin",
         "shipping.sentAt": serverTimestamp(),
+
         status: "in_transit",
         updatedAt: serverTimestamp(),
       });
 
       await logOrderEvent({
         orderId: order.id,
-        type: "PICKUP_SELECTED",
+        type: "RETIRA POR EL LOCAL",
         meta: {
+          previousShipping: order.shipping?.final || 0,
           changedBy: user?.email || "Admin",
         },
       });
 
-      toast.success("Pedido marcado como retiro en local 🏪");
+      toast.success("Pedido marcado como retiro 🏪");
 
     } catch (err) {
       console.error(err);
       toast.error("Error al marcar retiro");
     }
   }, []);
+
 
 
   const cancelPayment = useCallback(async (orderId) => {
@@ -390,7 +503,7 @@ const AdminOrders = () => {
       // ✅ LOG EVENTO
       await logOrderEvent({
         orderId,
-        type: "PAYMENT_METHOD_CHANGED",
+        type: "MÉTODO DE PAGO CAMBIADO",
         from: prevMethod,
         to: method,
         meta: {
@@ -417,7 +530,7 @@ const AdminOrders = () => {
 
       await logOrderEvent({
         orderId,
-        type: "ORDER_DELETED",
+        type: "ORDEN ELIMINADA",
         meta: {
           changedBy: auth.currentUser?.email || "Admin"
         }
@@ -440,7 +553,7 @@ const AdminOrders = () => {
 
       await logOrderEvent({
         orderId: order.id,
-        type: "ORDER_ARCHIVED",
+        type: "ORDEN ARCHIVADA",
         meta: {
           changedBy: auth.currentUser?.email || "Admin",
         },
@@ -469,7 +582,7 @@ const AdminOrders = () => {
       // ✅ LOG EVENTO WHATSAPP
       await logOrderEvent({
         orderId,
-        type: "WHATSAPP_SENT",
+        type: "WHATSAPP ENVIADO",
 
         meta: {
           changedBy: auth.currentUser?.email || "Admin",
@@ -561,6 +674,11 @@ const AdminOrders = () => {
   return (
     <main className="admin-orders">
       <audio ref={audioRef} src="/sounds/new-order.wav" preload="auto" />
+      <audio
+        ref={takenAudioRef}
+        src="/sounds/order-taken.mp3"
+        preload="auto"
+      />
 
       {/* HEADER */}
 
@@ -625,9 +743,28 @@ const AdminOrders = () => {
             <section className="order-card__info">
 
               <p><b>Cliente:</b> {order.customer?.name}</p>
-              <p><b>Dirección:</b> {order.customer?.direction}</p>
+              <p>
+                <b>Dirección:</b>{" "} <span>{order.customer?.direction}</span>
+                <button className="edit-adress-btn" title="Editar dirección" onClick={() => {
+                  setAskAddressFor(order);
+                  setAddressDraft(order.customer?.direction || "");
+                  setIsEditingAddress(true);
+                }}>
+                  ✏️
+                </button>
+              </p>
               <p><b>Teléfono:</b> {order.customer?.phone}</p>
-              <p><b>Total:</b> ${order.total}</p>
+              <p>
+                <b>
+                  {order.shipping?.final > 0
+                    ? "Total con envío:"
+                    : "Total:"}
+                </b>{" "}
+                $
+                {order.totalWithShipping ??
+                  order.total + (order.shipping?.final || 0)}
+              </p>
+
 
               {order.payment?.paidBy && (
                 <small className="order-branch">
@@ -679,20 +816,21 @@ const AdminOrders = () => {
 
               {/* ENVÍO */}
               <p className="order-shipping">
-                <b>Envío:</b>{" "}
-                {order.deliveryType === "pickup" ? (
-                  <span className="shipping-pickup">
-                    🏪 Retira en local
-                  </span>
-                ) : hasShippingFinal(order) ? (
+                <b>Costo de envío:</b>{" "}
+                {hasShippingFinal(order) ? (
                   <span className="shipping-sent">
                     💸 ${order.shipping.final}
+                  </span>
+                ) : order.deliveryType === "pickup" ? (
+                  <span className="shipping-pickup">
+                    🏪 Retira en local
                   </span>
                 ) : (
                   <span className="shipping-pending">
                     ⏳ Pendiente
                   </span>
                 )}
+
               </p>
 
 
@@ -822,10 +960,19 @@ const AdminOrders = () => {
 
               <button
                 className="btn btn--primary"
-                onClick={() => updateStatus(order, "completed")}
+                disabled={order.payment?.status !== "paid"}
+                onClick={() => {
+                  if (order.payment?.status !== "paid") {
+                    toast.error("Primero confirmá el pago 💰");
+                    return;
+                  }
+
+                  updateStatus(order, "completed");
+                }}
               >
                 Completar
               </button>
+
 
               {order.status === "completed" && (
                 <button
@@ -865,6 +1012,94 @@ const AdminOrders = () => {
           </article>
         ))}
       </section>
+
+
+      {askAddressFor && (
+        <div className="admin-address-overlay">
+          <div className="admin-address-modal">
+
+            <h3>
+              📍 {isEditingAddress ? "Editar dirección" : "Dirección para envío"}
+            </h3>
+
+
+            <p>
+              Este pedido era retiro. Ingresá la dirección
+              antes de mandar el envío.
+            </p>
+
+            <input
+              type="text"
+              placeholder="Ej: Calle 123, Timbre rojo"
+              value={addressDraft}
+              onChange={(e) => setAddressDraft(e.target.value)}
+            />
+
+            <div className="admin-address-actions">
+
+              <button
+                className="btn btn--secondary"
+                onClick={() => {
+                  setAskAddressFor(null);
+                  setAddressDraft("");
+                  setIsEditingAddress(false);
+                }}
+              >
+                Cancelar
+              </button>
+
+              <button
+                className="btn btn--primary"
+                disabled={!addressDraft.trim()}
+                onClick={async () => {
+                  try {
+                    await updateDoc(
+                      doc(db, "orders", askAddressFor.id),
+                      {
+                        "customer.direction": addressDraft.trim(),
+                        updatedAt: serverTimestamp(),
+                      }
+                    );
+
+                    await logOrderEvent({
+                      orderId: askAddressFor.id,
+                      type: "DIRECCIÓN CAMBIADA",
+                      meta: {
+                        address: addressDraft,
+                        changedBy: auth.currentUser?.email,
+                      },
+                    });
+
+                    toast.success("Dirección guardada 📍");
+
+                    const orderToRetry = pendingShippingOrder;
+
+                    // 🔥 Cerramos modal
+                    setAskAddressFor(null);
+                    setAddressDraft("");
+                    setPendingShippingOrder(null);
+
+                    // 🔥 Reintenta envío solo
+                    if (orderToRetry) {
+                      setTimeout(() => {
+                        updateShipping(orderToRetry);
+                      }, 200);
+                    }
+
+                  } catch (err) {
+                    console.error(err);
+                    toast.error("Error guardando dirección");
+                  }
+                }}
+
+              >
+                Guardar
+              </button>
+
+            </div>
+          </div>
+        </div>
+      )}
 
       <AdminLocalOrderModal
         open={openLocalOrder}

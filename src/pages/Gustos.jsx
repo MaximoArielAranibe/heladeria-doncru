@@ -8,11 +8,7 @@ const Gustos = () => {
     <main>
       <GustosSection
         category={categoria ?? "todos"}
-        title={
-          categoria
-            ? `Sabores de ${categoria.replace("-", " ")}`
-            : "Todos nuestros gustos"
-        }
+        title="Nuestros Sabores"
       />
     </main>
   );
