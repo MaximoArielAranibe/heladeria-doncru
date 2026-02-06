@@ -148,6 +148,8 @@
       color: $secondary-pink;
       font-family: $font-primary;
       white-space: nowrap;
+
+
     }
 
     &__button {
@@ -173,4 +175,9 @@
         &__price { font-size: 20px; }
     }
   }
+}
+
+.card-v__price-edit-select{
+  margin: 1rem 0;
+  font-size: 12px;
 }

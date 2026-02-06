@@ -1,47 +1,301 @@
+/* ============================
+   BACKDROP
+============================ */
+
 .admin-local-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,.6);
+  background: rgba(0, 0, 0, 0.55);
+
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 999;
+
+  z-index: 9999;
+  padding: 16px;
 }
 
+/* ============================
+   MODAL
+============================ */
+
 .admin-local-modal {
-  background: white;
-  width: 420px;
-  padding: 20px;
-  border-radius: 12px;
+  background: #fff;
+  width: 100%;
+  max-width: 420px;
+  max-height: 90vh;
+
   display: flex;
   flex-direction: column;
-  gap: 12px;
+
+  border-radius: 14px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+
+  overflow: scroll;
 }
+
+/* ============================
+   HEADER
+============================ */
+
+.admin-local-modal h3 {
+  padding: 16px;
+  margin: 0;
+
+  font-size: 18px;
+  font-weight: 600;
+
+  border-bottom: 1px solid #eee;
+
+  background: #fafafa;
+}
+
+/* ============================
+   CONTENT
+============================ */
+
+.admin-local-modal > *:not(h3) {
+  padding: 14px 16px;
+}
+
+/* ============================
+   PRODUCTS
+============================ */
 
 .local-products {
   display: grid;
-  grid-template-columns: repeat(2,1fr);
-  gap: 6px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
 }
 
 .local-products button {
-  padding: 6px;
+  padding: 10px 6px;
+
+  font-size: 13px;
+  font-weight: 500;
+
+  background: #f6f6f6;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: #ffe6f1;
+    border-color: #ff4fa3;
+  }
+
+  &:active {
+    transform: scale(0.97);
+  }
 }
+
+/* ============================
+   CART
+============================ */
 
 .local-cart {
   border-top: 1px solid #eee;
-  padding-top: 8px;
+  padding-top: 10px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.local-cart h4 {
+  font-size: 14px;
+  margin: 0;
 }
 
 .cart-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
+
+  gap: 8px;
+  font-size: 13px;
+
+  background: #fafafa;
+  padding: 6px 8px;
+  border-radius: 6px;
+}
+
+.cart-row small {
+  display: block;
+  color: #666;
+  font-size: 11px;
+}
+
+.cart-row button {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 14px;
+
+  color: #d33;
+
+  &:hover {
+    color: #a00;
+  }
+}
+
+/* ============================
+   FORM
+============================ */
+
+.local-delivery,
+.local-delivery-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ============================
+   INPUTS / SELECTS
+============================ */
+
+.admin-local-modal input,
+.admin-local-modal select {
+  width: 100%;
+  min-width: 0;
+
+  padding: 8px 10px;
+
+  font-size: 14px;
+
+  border-radius: 8px;
+  border: 1px solid #ccc;
+
+  background: #fff;
+
+  box-sizing: border-box;
+
+  transition: all 0.15s ease;
+
+  &:focus {
+    outline: none;
+    border-color: #ff4fa3;
+    box-shadow: 0 0 0 2px rgba(255, 79, 163, 0.15);
+  }
+}
+
+/* ============================
+   SHIPPING
+============================ */
+
+.shipping-row {
+  display: flex;
   gap: 6px;
 }
+
+.shipping-row select,
+.shipping-row input {
+  flex: 1;
+  width: 100%;
+}
+
+/* ============================
+   TOTAL
+============================ */
+
+.local-total {
+  margin: 6px 0 0;
+
+  font-size: 15px;
+  text-align: right;
+
+  b {
+    color: #ff4fa3;
+  }
+}
+
+/* ============================
+   ACTIONS
+============================ */
 
 .local-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
+  gap: 10px;
+
+  padding-top: 8px;
+  border-top: 1px solid #eee;
+}
+
+/* ============================
+   BUTTONS
+============================ */
+
+.local-actions .btn {
+  padding: 8px 14px;
+
+  font-size: 13px;
+  font-weight: 500;
+
+  border-radius: 8px;
+
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+/* Secondary */
+
+.local-actions .btn--secondary {
+  background: #f3f3f3;
+  border: 1px solid #ccc;
+
+  &:hover {
+    background: #e8e8e8;
+  }
+}
+
+/* Primary */
+
+.local-actions .btn--primary {
+  background: #ff4fa3;
+  border: none;
+  color: white;
+
+  &:hover {
+    background: #e03c8b;
+  }
+
+  &:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+  }
+}
+
+/* ============================
+   MOBILE
+============================ */
+
+@media (max-width: 420px) {
+
+  .admin-local-modal {
+    max-width: 100%;
+    border-radius: 10px;
+  }
+
+  .local-products {
+    grid-template-columns: 1fr;
+  }
+
+  .shipping-row {
+    flex-direction: column;
+  }
+
+  .local-actions {
+    flex-direction: column-reverse;
+
+    .btn {
+      width: 100%;
+    }
+  }
+}
+
+
+.payment__select{
 }

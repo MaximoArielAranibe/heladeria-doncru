@@ -1,4 +1,4 @@
-@use "./variables" as *;
+@use "./variables"as *;
 
 /* =============================
    CARRITO
@@ -366,8 +366,8 @@
 }
 
 .carrito-modal__body {
-  flex: 1;              // ocupa todo
-  overflow-y: auto;     // scroll real
+  flex: 1; // ocupa todo
+  overflow-y: auto; // scroll real
   padding: 0 1rem;
 }
 
@@ -409,4 +409,12 @@
   max-width: 260px;
 
 
+}
+
+
+
+.carrito-modal__body {
+  .conenvio__input {
+    font-size: 12px;
+  }
 }

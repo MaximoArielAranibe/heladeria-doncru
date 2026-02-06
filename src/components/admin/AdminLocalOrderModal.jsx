@@ -4,34 +4,52 @@ import {
   collection,
   serverTimestamp,
 } from "firebase/firestore";
+
 import { auth, db } from "../../firebase/firebase";
 import { useProducts } from "../../hooks/useProducts";
 import { useGustos } from "../../hooks/useGustos";
+
 import SelectGustosModal from "../SelectGustosModal";
 import toast from "react-hot-toast";
-import "../../styles/AdminLocalOrderModal.scss";
 
+import "../../styles/AdminLocalOrderModal.scss";
 
 const AdminLocalOrderModal = ({ open, onClose }) => {
   const { products } = useProducts();
   const { gustos } = useGustos();
 
+  /* =====================
+     STATE
+  ===================== */
+
   const [cart, setCart] = useState([]);
-  const [selectedProduct, setSelectedProduct] =
-    useState(null);
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
-  const [openGustos, setOpenGustos] =
-    useState(false);
+  const [openGustos, setOpenGustos] = useState(false);
 
-  const [payment, setPayment] =
-    useState("efectivo");
+  const [payment, setPayment] = useState("efectivo");
 
-  const total = useMemo(() => {
+  const [deliveryType, setDeliveryType] = useState("pickup"); // pickup | delivery
+  const [address, setAddress] = useState("");
+  const [phone, setPhone] = useState("");
+  const [shippingCost, setShippingCost] = useState("");
+
+  /* =====================
+     TOTALS
+  ===================== */
+
+  const productsTotal = useMemo(() => {
     return cart.reduce(
       (acc, i) => acc + i.price * i.quantity,
       0
     );
   }, [cart]);
+
+  const shippingValue = Number(shippingCost) || 0;
+
+  const total = useMemo(() => {
+    return productsTotal + shippingValue;
+  }, [productsTotal, shippingValue]);
 
   if (!open) return null;
 
@@ -54,22 +72,60 @@ const AdminLocalOrderModal = ({ open, onClose }) => {
   ===================== */
 
   const handleCreate = async () => {
+
     if (cart.length === 0) {
       toast.error("Agregá productos");
       return;
     }
 
+    // ✅ Validaciones envío
+    if (deliveryType === "delivery") {
+
+      if (!address.trim()) {
+        toast.error("Ingresá la dirección");
+        return;
+      }
+
+      if (!phone.trim()) {
+        toast.error("Ingresá el teléfono");
+        return;
+      }
+
+      if (!shippingCost || Number(shippingCost) <= 0) {
+        toast.error("Ingresá costo de envío");
+        return;
+      }
+    }
+
     try {
+
+      const shipping =
+        deliveryType === "delivery"
+          ? Number(shippingCost)
+          : 0;
+
       await addDoc(collection(db, "orders"), {
+
         customer: {
           name: "Venta local",
-          phone: "",
-          direction: "",
+          phone:
+            deliveryType === "delivery"
+              ? phone
+              : "",
+          direction:
+            deliveryType === "delivery"
+              ? address
+              : "Retiro en local",
         },
 
         items: cart,
 
-        total,
+        total: productsTotal,
+
+        totalWithShipping:
+          deliveryType === "delivery"
+            ? total
+            : null,
 
         payment: {
           method: payment,
@@ -79,14 +135,25 @@ const AdminLocalOrderModal = ({ open, onClose }) => {
         },
 
         shipping: {
-          final: 0,
+          final: shipping,
+          sentBy:
+            shipping > 0
+              ? auth.currentUser?.email
+              : null,
+          sentAt:
+            shipping > 0
+              ? serverTimestamp()
+              : null,
         },
 
-        deliveryType: "pickup",
+        deliveryType,
 
         archived: false,
 
-        status: "pending",
+        status:
+          deliveryType === "delivery"
+            ? "cost_send"
+            : "pending",
 
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -94,7 +161,14 @@ const AdminLocalOrderModal = ({ open, onClose }) => {
 
       toast.success("Pedido creado 🏪");
 
+      // ✅ RESET
       setCart([]);
+      setAddress("");
+      setPhone("");
+      setShippingCost("");
+      setDeliveryType("pickup");
+      setPayment("efectivo");
+
       onClose();
 
     } catch (err) {
@@ -102,6 +176,10 @@ const AdminLocalOrderModal = ({ open, onClose }) => {
       toast.error("Error creando pedido");
     }
   };
+
+  /* =====================
+     UI
+  ===================== */
 
   return (
     <div className="admin-local-backdrop">
@@ -119,8 +197,9 @@ const AdminLocalOrderModal = ({ open, onClose }) => {
               key={p.id}
               onClick={() => {
 
-                // 👉 Si NO tiene gustos (ej: postres)
+                // 👉 Sin gustos
                 if (!p.maxGustos || p.maxGustos === 0) {
+
                   addItem({
                     ...p,
                     gustos: [],
@@ -131,7 +210,7 @@ const AdminLocalOrderModal = ({ open, onClose }) => {
                   return;
                 }
 
-                // 👉 Si TIENE gustos (helados)
+                // 👉 Con gustos
                 setSelectedProduct(p);
                 setOpenGustos(true);
               }}
@@ -139,7 +218,6 @@ const AdminLocalOrderModal = ({ open, onClose }) => {
               {p.title}
             </button>
           ))}
-
 
         </div>
 
@@ -149,9 +227,7 @@ const AdminLocalOrderModal = ({ open, onClose }) => {
 
           <h4>🛒 Carrito</h4>
 
-          {cart.length === 0 && (
-            <p>Vacío</p>
-          )}
+          {cart.length === 0 && <p>Vacío</p>}
 
           {cart.map((item, i) => (
             <div key={i} className="cart-row">
@@ -161,7 +237,8 @@ const AdminLocalOrderModal = ({ open, onClose }) => {
               </span>
 
               <small>
-                🍦 {item.gustos
+                🍦{" "}
+                {item.gustos
                   .map((id) =>
                     gustos.find(
                       (g) => g.id === id
@@ -170,9 +247,7 @@ const AdminLocalOrderModal = ({ open, onClose }) => {
                   .join(", ")}
               </small>
 
-              <button
-                onClick={() => removeItem(i)}
-              >
+              <button onClick={() => removeItem(i)}>
                 ✖
               </button>
 
@@ -181,21 +256,109 @@ const AdminLocalOrderModal = ({ open, onClose }) => {
 
         </div>
 
-        {/* PAYMENT */}
+        {/* DELIVERY TYPE */}
 
-        <select
-          value={payment}
-          onChange={(e) =>
-            setPayment(e.target.value)
-          }
-        >
-          <option value="efectivo">
-            💵 Efectivo
-          </option>
-          <option value="transferencia">
-            💳 Transferencia
-          </option>
-        </select>
+        <div className="local-delivery">
+
+          <select
+            value={deliveryType}
+            onChange={(e) =>
+              setDeliveryType(e.target.value)
+            }
+          >
+            <option value="pickup">
+              🏪 Retiro en local
+            </option>
+
+            <option value="delivery">
+              🚚 Envío a domicilio
+            </option>
+          </select>
+
+        </div>
+
+        {/* DELIVERY FORM */}
+
+        {deliveryType === "delivery" && (
+
+          <div className="local-delivery-form">
+
+            <input
+              type="text"
+              placeholder="📍 Dirección"
+              value={address}
+              onChange={(e) =>
+                setAddress(e.target.value)
+              }
+            />
+
+            <input
+              type="tel"
+              placeholder="📞 Teléfono"
+              value={phone}
+              onChange={(e) =>
+                setPhone(e.target.value)
+              }
+            />
+
+            <div className="shipping-row">
+
+              <select
+                value={shippingCost}
+                onChange={(e) =>
+                  setShippingCost(e.target.value)
+                }
+              >
+                <option value="">
+                  Costo Envío 🚚
+                </option>
+
+                {[2000, 2500, 3000, 4000, 4500, 5000].map(
+                  (v) => (
+                    <option key={v} value={v}>
+                      ${v}
+                    </option>
+                  )
+                )}
+
+              </select>
+
+              <input
+                type="number"
+                min="0"
+                placeholder="Comentarios adicionales"
+                value={shippingCost}
+                onChange={(e) =>
+                  setShippingCost(e.target.value)
+                }
+              />
+
+            </div>
+
+          </div>
+        )}
+
+        {/* PAYMENT */}
+        <div className="local-delivery">
+
+          <select
+            className="payment__select"
+            value={payment}
+            onChange={(e) =>
+              setPayment(e.target.value)
+            }
+          >
+            <option value="efectivo">
+              💵 Efectivo
+            </option>
+
+            <option value="transferencia">
+              💳 Transferencia
+            </option>
+          </select>
+        </div>
+
+        {/* TOTAL */}
 
         <p className="local-total">
           Total: <b>${total}</b>

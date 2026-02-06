@@ -71,6 +71,7 @@ const CardVertical = ({ product }) => {
           {isAdmin && editingPrice && (
             <div className="card-v__price-edit">
               <input
+                className="card-v__price-edit-select"
                 type="number"
                 min="0"
                 value={localPrice}

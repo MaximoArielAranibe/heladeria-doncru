@@ -336,6 +336,7 @@ const Carrito = () => {
                         <p>Elige una zona aproximada</p>
 
                         <select
+                        className="conenvio__input"
                           value={zone}
                           onChange={(e) =>
                             setZone(e.target.value)
