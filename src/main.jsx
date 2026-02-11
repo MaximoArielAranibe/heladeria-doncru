@@ -4,7 +4,7 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 
 import { AuthProvider } from "./context/AuthProvider";
-import { CartProvider } from "./context/CartContext";
+import { CartProvider } from "./context/CartProvider";
 
 // 🔁 Soporte para redirect en GitHub Pages
 const redirect = sessionStorage.getItem("redirect");

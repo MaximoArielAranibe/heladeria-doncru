@@ -1,6 +1,6 @@
-import { useContext, useEffect, useState, useRef } from "react";
+import {  useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
-import { CartContext } from "../context/CartContext";
+import { useCart } from "../context/useCart";
 import CartItem from "../components/CartItem";
 import { createOrder } from "../services/orders.service";
 import { normalizePhoneAR, isValidPhoneAR } from "../utils/phone";
@@ -22,7 +22,7 @@ const SHIPPING_ZONES = {
 
 const Carrito = () => {
   const { cart, removeFromCart, clearCart, updateQuantity } =
-    useContext(CartContext);
+    useCart();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderSent, setOrderSent] = useState(false);
@@ -106,6 +106,8 @@ const Carrito = () => {
     `.trim();
   };
 
+  console.log(cart.map(i => i.cartId));
+  console.log("CART:", cart);
 
   const handleConfirm = async () => {
     if (isSubmitting) return;
