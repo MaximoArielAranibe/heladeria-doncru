@@ -1,4 +1,4 @@
-import {  useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { useCart } from "../context/useCart";
 import CartItem from "../components/CartItem";
@@ -263,7 +263,7 @@ const Carrito = () => {
                     {/* ENVIO */}
 
                     <div className="carrito-radiobuttons-container">
-                      <div>
+                      {/*       <div>
                         <input
                           type="radio"
                           id="envio"
@@ -273,18 +273,35 @@ const Carrito = () => {
                           checked={envio === "conenvio"}
                         />
                         <label htmlFor="envio">Con envío</label>
+                      </div> */}
+                      <div className="radio-item">
+                        <label className="radio-item_label">
+                          <input
+                            type="radio"
+                            name="envio-sinenvio"
+                            value="conenvio"
+                            checked={envio === "conenvio"}
+                            onChange={handleEnvio}
+                          />
+                          <span>Con envío</span>
+                        </label>
                       </div>
 
-                      <div>
-                        <input
-                          type="radio"
-                          id="sinenvio"
-                          name="envio-sinenvio"
-                          value="sinenvio"
-                          onChange={handleEnvio}
-                          checked={envio === "sinenvio"}
-                        />
-                        <label htmlFor="sinenvio">Paso a retirar</label>
+
+
+                      <div className="radio-item">
+                        <label className="radio-item_label">
+                          <input
+                            type="radio"
+                            id="sinenvio"
+                            name="envio-sinenvio"
+                            value="sinenvio"
+                            onChange={handleEnvio}
+                            checked={envio === "sinenvio"}
+                          />
+                          Paso a retirar
+                        </label>
+
                       </div>
                     </div>
 
@@ -296,38 +313,37 @@ const Carrito = () => {
                       </p>
 
                       <div className="carrito-radiobuttons-container">
-                        <div>
-                          <input
-                            type="radio"
-                            id="efectivo"
-                            name="payment"
-                            value="efectivo"
-                            checked={paymentMethod === "efectivo"}
-                            onChange={(e) =>
-                              setPaymentMethod(e.target.value)
-                            }
-                          />
-                          <label htmlFor="efectivo">
-                            💵 Efectivo
+
+                        <div className="radio-item">
+
+                          <label className="radio-item_label">
+                            <input
+                              type="radio"
+                              name="payment"
+                              value="efectivo"
+                              checked={paymentMethod === "efectivo"}
+                              onChange={(e) => setPaymentMethod(e.target.value)}
+                            />
                           </label>
+                          💵 Efectivo
+
                         </div>
 
-                        <div>
-                          <input
-                            type="radio"
-                            id="transferencia"
-                            name="payment"
-                            value="transferencia"
-                            checked={paymentMethod === "transferencia"}
-                            onChange={(e) =>
-                              setPaymentMethod(e.target.value)
-                            }
-                          />
-                          <label htmlFor="transferencia">
+                        <div className="radio-item">
+                          <label className="radio-item_label">
+                            <input
+                              type="radio"
+                              name="payment"
+                              value="transferencia"
+                              checked={paymentMethod === "transferencia"}
+                              onChange={(e) => setPaymentMethod(e.target.value)}
+                            />
                             💳 Transferencia
                           </label>
                         </div>
+
                       </div>
+
                     </div>
 
                     {/* ZONA */}
@@ -338,7 +354,7 @@ const Carrito = () => {
                         <p>Elige una zona aproximada</p>
 
                         <select
-                        className="conenvio__input"
+                          className="conenvio__input"
                           value={zone}
                           onChange={(e) =>
                             setZone(e.target.value)

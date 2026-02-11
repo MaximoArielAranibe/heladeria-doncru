@@ -294,15 +294,32 @@
 
   font-size: 0.9rem;
   font-weight: 600;
-
   input[type="radio"] {
-    accent-color: #ff6b00;
+    accent-color: $primary-pink;
+    -webkit-appearance: radio;
+    appearance: radio;
+    width: min-content;
+
+    margin: 0;
+
     cursor: pointer;
+    flex-shrink: 0;
   }
+
+
+  .radio-item{
+    &_label{
+      display: flex;
+      flex-flow: row;
+      gap: 4px;
+    }
+  }
+
 
   div {
     display: flex;
     align-items: center;
+    gap: 0.4rem;
   }
 
   label {
@@ -366,11 +383,6 @@
   }
 }
 
-.carrito-modal__body {
-  flex: 1; // ocupa todo
-  overflow-y: auto; // scroll real
-  padding: 0 1rem;
-}
 
 /* =============================
    SUCCESS STATE
