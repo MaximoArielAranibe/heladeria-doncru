@@ -53,9 +53,8 @@ const Navbar = () => {
             </div>
 
             <div
-              className={`navbar__buttons__burger ${
-                isOpen ? "is-active" : ""
-              }`}
+              className={`navbar__buttons__burger ${isOpen ? "is-active" : ""
+                }`}
               onClick={() => setIsOpen(!isOpen)}
             >
               <button
@@ -101,18 +100,16 @@ const Navbar = () => {
       </header>
 
       {/* Franja info solo para usuarios */}
-      <HideForAdmin>
-{/*         <div className="navbar__info">
+      {/*         <div className="navbar__info">
           <p className="navbar__info__text">
             ❄️ Helado artesanal · Entrega en 20–30 min
           </p>
         </div> */}
-        <div className="navbar__info">
-          <p className="navbar__info__text">
-            ❄️ Hace tu pedido desde las 10:30 am a 01:30am
-          </p>
-        </div>
-      </HideForAdmin>
+      <div className="navbar__info">
+        <p className="navbar__info__text">
+          ❄️ Hace tu pedido desde las 10:30 am a 01:30am
+        </p>
+      </div>
     </>
   );
 };
