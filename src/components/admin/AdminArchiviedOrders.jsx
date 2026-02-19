@@ -41,6 +41,17 @@ const AdminArchivedOrders = () => {
   const [dateFilter, setDateFilter] = useState(null);
   const [dateDraft, setDateDraft] = useState("");
 
+  const filteredDayTotal = useMemo(() => {
+    if (!dateFilter) return null;
+
+    return orders.reduce((sum, order) => {
+      const productsTotal = order.total ?? 0;
+      const shipping = order.shipping?.final ?? 0;
+      return sum + productsTotal + shipping;
+    }, 0);
+  }, [orders, dateFilter]);
+
+
   /* =====================
      GUSTOS MAP
   ===================== */
@@ -154,6 +165,13 @@ const AdminArchivedOrders = () => {
           value={dateDraft}
           onChange={(e) => setDateDraft(e.target.value)}
         />
+
+{dateFilter && !loading && (
+  <div className="archived-day-total">
+    Total del día: <strong>${filteredDayTotal}</strong>
+  </div>
+)}
+
 
         <button
           className="btn btn--secondary"
