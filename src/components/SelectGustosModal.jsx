@@ -1,11 +1,12 @@
-import { useState, useMemo } from "react";
+// UPDATED: src/components/SelectGustosModal.jsx
+import { useState, useMemo, useEffect } from "react";
 import Modal from "./Modal";
 import { useCart } from "../context/useCart";
 import { useGustos } from "../hooks/useGustos";
 import "../styles/SelectGustosModal.scss";
 import toast from "react-hot-toast";
 
-const SelectGustosModal = ({ product, open, onClose, onConfirm }) => {
+const SelectGustosModal = ({ product, open, onClose, onConfirm, initialSelected = [] }) => {
   const { addToCart } = useCart();
   const { gustos, loading } = useGustos();
 
@@ -13,17 +14,18 @@ const SelectGustosModal = ({ product, open, onClose, onConfirm }) => {
 
   const maxGustos = product?.maxGustos ?? 0;
 
-  /* =====================
-     SAFE GUSTOS
-  ===================== */
+  // 👉 preload when opening
+  useEffect(() => {
+    if (open && initialSelected?.length) {
+      setSelected(initialSelected);
+    }
+  }, [open, initialSelected]);
+
   const safeGustos = useMemo(
     () => (Array.isArray(gustos) ? gustos : []),
     [gustos]
   );
 
-  /* =====================
-     TOGGLE (USA ID)
-  ===================== */
   const toggleGusto = (gustoId, isInactive) => {
     if (isInactive) return;
 
@@ -41,9 +43,6 @@ const SelectGustosModal = ({ product, open, onClose, onConfirm }) => {
     });
   };
 
-  /* =====================
-     CONFIRM
-  ===================== */
   const handleConfirm = () => {
     if (selected.length === 0) return;
 
@@ -54,10 +53,8 @@ const SelectGustosModal = ({ product, open, onClose, onConfirm }) => {
     };
 
     if (onConfirm) {
-      // 👉 Modo ADMIN
       onConfirm(item);
     } else {
-      // 👉 Modo CLIENTE
       addToCart(item);
     }
 
@@ -66,7 +63,6 @@ const SelectGustosModal = ({ product, open, onClose, onConfirm }) => {
     setSelected([]);
     onClose();
   };
-
 
   const handleClose = () => {
     setSelected([]);

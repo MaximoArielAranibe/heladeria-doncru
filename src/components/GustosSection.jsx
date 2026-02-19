@@ -1,7 +1,11 @@
+// UPDATED: src/components/GustosSection.jsx
 import { useState, useMemo } from "react";
 import "../styles/ProductsSection.scss";
 import { useGustos } from "../hooks/useGustos";
 import { useAuth } from "../hooks/useAuth";
+import { products } from "../data/products";
+import Modal from "./Modal";
+import SelectGustosModal from "./SelectGustosModal";
 import {
   createGusto,
   updateGusto,
@@ -10,9 +14,6 @@ import {
 import toast from "react-hot-toast";
 import { formatCategory } from "../utils/formatCategory";
 
-/* =====================
-   HELPERS
-===================== */
 const slugify = (text = "") =>
   text
     .toLowerCase()
@@ -32,9 +33,25 @@ const GustosSection = ({ category = "todos", title }) => {
 
   const [activeCategory, setActiveCategory] = useState(category);
 
-  /* =====================
-     EDIT
-  ===================== */
+  // FLOW CLIENTE
+  const [sizeModalOpen, setSizeModalOpen] = useState(false);
+  const [selectedGusto, setSelectedGusto] = useState(null);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [gustosModalOpen, setGustosModalOpen] = useState(false);
+
+  const openSizeSelector = (gusto) => {
+    if (isAdmin) return;
+    setSelectedGusto(gusto);
+    setSizeModalOpen(true);
+  };
+
+  const handleSizeSelect = (product) => {
+    setSelectedProduct(product);
+    setSizeModalOpen(false);
+    setGustosModalOpen(true);
+  };
+
+  // ADMIN EDIT
   const [editingId, setEditingId] = useState(null);
   const [editData, setEditData] = useState({
     name: "",
@@ -42,19 +59,6 @@ const GustosSection = ({ category = "todos", title }) => {
     newCategory: "",
   });
 
-  /* =====================
-    CREATE
-  ===================== */
-  const [creating, setCreating] = useState(false);
-  const [newGusto, setNewGusto] = useState({
-    name: "",
-    weight: "",
-    category: "",
-  });
-
-  /* =====================
-     CATEGORÍAS
-  ===================== */
   const categories = useMemo(() => {
     const unique = new Set(
       safeGustos.map((g) => g.category).filter(Boolean)
@@ -66,20 +70,14 @@ const GustosSection = ({ category = "todos", title }) => {
     (c) => c !== "todos"
   );
 
-  /* =====================
-     FILTRADO
-  ===================== */
   const filteredGustos = useMemo(() => {
     return activeCategory === "todos"
       ? safeGustos
       : safeGustos.filter(
-        (g) => g.category === activeCategory
-      );
+          (g) => g.category === activeCategory
+        );
   }, [safeGustos, activeCategory]);
 
-  /* =====================
-     EDIT
-  ===================== */
   const startEdit = (gusto) => {
     setEditingId(gusto.id);
     setEditData({
@@ -100,11 +98,6 @@ const GustosSection = ({ category = "todos", title }) => {
         ? slugify(editData.newCategory)
         : editData.category;
 
-    if (!finalCategory) {
-      toast.error("Completá la categoría");
-      return;
-    }
-
     try {
       await updateGusto(id, {
         name: editData.name.trim(),
@@ -114,75 +107,18 @@ const GustosSection = ({ category = "todos", title }) => {
       toast.success("Gusto actualizado 🍦");
       setEditingId(null);
     } catch (error) {
-      toast.error("Error al actualizar gusto");
-      console.error(error);
+      toast.error("Error al actualizar gusto", error);
     }
   };
 
-
-  const handleCreate = async () => {
-    // 🧪 VALIDACIONES
-    if (!newGusto.name.trim()) {
-      toast.error("El nombre no puede estar vacío");
-      return;
-    }
-
-    if (!newGusto.weight || Number(newGusto.weight) <= 0) {
-      toast.error("El stock inicial debe ser mayor a 0");
-      return;
-    }
-
-    const finalCategory =
-      newGusto.category === "__new__"
-        ? slugify(newGusto.newCategory)
-        : newGusto.category;
-
-    if (!finalCategory) {
-      toast.error("Completá la categoría");
-      return;
-    }
-
-    try {
-      await createGusto({
-        name: newGusto.name.trim(),
-        category: finalCategory,
-        weight: Number(newGusto.weight), // 🔥 CLAVE
-        active: true,
-        createdAt: new Date(),
-      });
-
-      toast.success("Gusto creado 🍨");
-
-      setNewGusto({
-        name: "",
-        weight: "",
-        category: "",
-        newCategory: "",
-      });
-
-      setCreating(false);
-    } catch (error) {
-      toast.error("Error al crear gusto");
-      console.error(error);
-    }
-  };
-
-  /* =====================
-     DELETE
-  ===================== */
   const handleDelete = async (id, name) => {
-    const ok = window.confirm(
-      `¿Eliminar el gusto "${name}"?\n\nEsta acción no se puede deshacer.`
-    );
-
-    if (!ok) return;
+    if (!window.confirm(`¿Eliminar "${name}"?`)) return;
 
     try {
       await deleteGusto(id);
-      toast.success("Gusto eliminado 🗑️");
-    } catch (error) {
-      toast.error("Error al eliminar gusto");
-      console.error(error);
+      toast.success("Gusto eliminado");
+    } catch {
+      toast.error("Error al eliminar");
     }
   };
 
@@ -190,6 +126,9 @@ const GustosSection = ({ category = "todos", title }) => {
 
   return (
     <section className="products">
+      {isAdmin && (
+        <button onClick={() => createGusto()}>Crear gusto</button>
+      )}
       <header className="products__header">
         <h2 className="products__title">{title}</h2>
         <p className="products__subtitle">
@@ -197,107 +136,13 @@ const GustosSection = ({ category = "todos", title }) => {
         </p>
       </header>
 
-      {/* ➕ CREATE GUSTO */}
-      {isAdmin && (
-        <div className="admin-create-gusto">
-          {!creating ? (
-            <button
-              className="create-gusto-btn"
-              onClick={() => setCreating(true)}
-            >
-              ➕ Agregar gusto
-            </button>
-          ) : (
-            <div className="gusto-edit">
-              <input
-                placeholder="Nombre del gusto"
-                value={newGusto.name}
-                onChange={(e) =>
-                  setNewGusto({
-                    ...newGusto,
-                    name: e.target.value,
-                  })
-                }
-              />
-              <input
-                type="number"
-                name="weight"
-                placeholder="Stock inicial (gramos)"
-                value={newGusto.weight}
-                onChange={(e) =>
-                  setNewGusto({
-                    ...newGusto,
-                    weight: e.target.value,
-                  })
-                }
-
-              />
-
-
-              <select
-                value={newGusto.category}
-                onChange={(e) =>
-                  setNewGusto({
-                    ...newGusto,
-                    category: e.target.value,
-                  })
-                }
-              >
-                <option value="">Seleccionar categoría</option>
-
-                {selectableCategories.map((c) => (
-                  <option key={c} value={c}>
-                    {formatCategory(c)}
-                  </option>
-                ))}
-
-                {/*  <option value="__new__">
-                  ➕ Nueva categoría
-                </option> */} {/* Posible feature nueva categoria */}
-              </select>
-
-              {newGusto.category === "__new__" && (
-                <input
-                  placeholder="Nombre de la nueva categoría"
-                  value={newGusto.newCategory}
-                  onChange={(e) =>
-                    setNewGusto({
-                      ...newGusto,
-                      newCategory: e.target.value,
-                    })
-                  }
-                />
-              )}
-
-              <button className="save" onClick={handleCreate}>
-                ✔ Crear
-              </button>
-
-              <button
-                className="cancel"
-                onClick={() => {
-                  setCreating(false);
-                  setNewGusto({
-                    name: "",
-                    category: "",
-                    newCategory: "",
-                  });
-                }}
-              >
-                ✕
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* 🔍 FILTROS */}
       <div className="products__filters">
         {categories.map((cat) => (
           <button
             key={cat}
-            className={`filter-btn ${activeCategory === cat ? "is-active" : ""
-              }`}
+            className={`filter-btn ${
+              activeCategory === cat ? "is-active" : ""
+            }`}
             onClick={() => setActiveCategory(cat)}
           >
             {formatCategory(cat)}
@@ -305,112 +150,168 @@ const GustosSection = ({ category = "todos", title }) => {
         ))}
       </div>
 
-      {/* 🍦 LISTA */}
       <div className="products__list">
-        {filteredGustos.map((gusto) => (
-          <div key={gusto.id} className="gusto-card">
-            {editingId === gusto.id ? (
-              <div className="gusto-edit">
-                <input
-                  value={editData.name}
-                  onChange={(e) =>
-                    setEditData({
-                      ...editData,
-                      name: e.target.value,
-                    })
-                  }
-                />
+        {filteredGustos.map((gusto) => {
+          const isInactive =
+            gusto.active === false || gusto.weight <= 0;
+          const isClickable = !isAdmin && !isInactive;
 
-                <select
-                  value={editData.category}
-                  onChange={(e) =>
-                    setEditData({
-                      ...editData,
-                      category: e.target.value,
-                    })
-                  }
-                >
-                  {selectableCategories.map((c) => (
-                    <option key={c} value={c}>
-                      {formatCategory(c)}
-                    </option>
-                  ))}
-                  <option value="__new__">
-                    ➕ Nueva categoría
-                  </option>
-                </select>
-
-                {editData.category === "__new__" && (
+          // INLINE EDIT
+          if (isAdmin && editingId === gusto.id) {
+            return (
+              <div key={gusto.id} className="gusto-card">
+                <div className="gusto-edit">
                   <input
-                    placeholder="Nueva categoría"
-                    value={editData.newCategory}
+                    value={editData.name}
                     onChange={(e) =>
-                      setEditData({
-                        ...editData,
-                        newCategory: e.target.value,
-                      })
+                      setEditData((p) => ({
+                        ...p,
+                        name: e.target.value,
+                      }))
                     }
                   />
-                )}
 
-                <button
-                  className="save"
-                  onClick={() => saveEdit(gusto.id)}
-                >
-                  ✔
-                </button>
+                  <select
+                    value={editData.category}
+                    onChange={(e) =>
+                      setEditData((p) => ({
+                        ...p,
+                        category: e.target.value,
+                      }))
+                    }
+                  >
+                    <option value="">Categoría</option>
+                    {selectableCategories.map((c) => (
+                      <option key={c} value={c}>
+                        {formatCategory(c)}
+                      </option>
+                    ))}
+                    <option value="__new__">
+                      + Nueva
+                    </option>
+                  </select>
 
-                <button
-                  className="cancel"
-                  onClick={() => setEditingId(null)}
-                >
-                  ✕
-                </button>
-              </div>
-            ) : (
-              <>
-                <div className="gusto-info">
-                  <span className="gusto-name">{gusto.name}</span>
-
-                  {isAdmin && (
-                    <span
-                      className={`gusto-stock ${gusto.weight < 1000
-                        ? "danger"
-                        : gusto.weight < 3000
-                          ? "warning"
-                          : ""
-                        }`}
-                    >
-                      {(gusto.weight / 1000).toFixed(2)} kg
-                    </span>
+                  {editData.category === "__new__" && (
+                    <input
+                      placeholder="Nueva categoría"
+                      value={editData.newCategory}
+                      onChange={(e) =>
+                        setEditData((p) => ({
+                          ...p,
+                          newCategory: e.target.value,
+                        }))
+                      }
+                    />
                   )}
-                </div>
 
-
-                {isAdmin && (
                   <div className="gusto-actions">
                     <button
-                      className="gusto-edit-btn"
-                      onClick={() => startEdit(gusto)}
-                    >
-                      ✏️ Editar
-                    </button>
-
-                    <button
-                      className="gusto-delete-btn"
+                      className="save"
                       onClick={() =>
-                        handleDelete(gusto.id, gusto.name)
+                        saveEdit(gusto.id)
                       }
                     >
-                      🗑️ Eliminar
+                      Guardar
+                    </button>
+                    <button
+                      className="cancel"
+                      onClick={() =>
+                        setEditingId(null)
+                      }
+                    >
+                      Cancelar
                     </button>
                   </div>
-                )}
-              </>
-            )}
-          </div>
-        ))}
+                </div>
+              </div>
+            );
+          }
+
+          return (
+            <div
+              key={gusto.id}
+              className={`gusto-card ${
+                isClickable ? "is-clickable" : ""
+              } ${isInactive ? "is-disabled" : ""}`}
+              onClick={(e) => {
+                if (!isClickable) return;
+                openSizeSelector(gusto);
+              }}
+
+            >
+              <div className="gusto-info">
+                <span className="gusto-name">
+                  {gusto.name}
+                </span>
+              </div>
+
+              {isAdmin && (
+                <div className="gusto-actions">
+                  <button
+                    className="gusto-edit-btn"
+                    onClick={() =>
+                      startEdit(gusto)
+                    }
+                  >
+                    ✏️
+                  </button>
+
+                  <button
+                    className="gusto-delete-btn"
+                    onClick={() =>
+                      handleDelete(
+                        gusto.id,
+                        gusto.name
+                      )
+                    }
+                  >
+                    🗑️
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
+
+      {/* SIZE MODAL */}
+      <Modal
+        open={sizeModalOpen}
+        onClose={() => setSizeModalOpen(false)}
+      >
+        <div className="select-modal">
+          <h3>Elegí tamaño</h3>
+          <div className="gustos-grid gustos-grid-center">
+            {products.map((p) => (
+              <button
+                key={p.id}
+                className="gusto-option"
+                onClick={() =>
+                  handleSizeSelect(p)
+                }
+              >
+                {p.title}
+              </button>
+            ))}
+          </div>
+        </div>
+      </Modal>
+
+      {/* GUSTOS MODAL */}
+      {selectedProduct && (
+        <SelectGustosModal
+          product={selectedProduct}
+          open={gustosModalOpen}
+          initialSelected={
+            selectedGusto
+              ? [selectedGusto.id]
+              : []
+          }
+          onClose={() =>
+            setGustosModalOpen(false)
+          }
+        />
+      )}
     </section>
   );
 };

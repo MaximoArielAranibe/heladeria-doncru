@@ -1,4 +1,4 @@
-@use "../styles/variables.scss" as *;
+@use "../styles/variables.scss"as *;
 
 /* =========================
    MODAL STRUCTURE
@@ -50,9 +50,12 @@
 
 .gustos-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(1, 1fr);
   gap: 0.75rem;
   margin-bottom: 1.5rem;
+  place-content: center;
+  margin-top: 2rem;
+
 }
 
 /* =========================
@@ -138,10 +141,21 @@
   .gustos-grid {
     grid-template-columns: repeat(4, 1fr);
   }
+
+  .gustos-grid-center {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 .gusto-option.is-disabled {
   opacity: 0.4;
   cursor: not-allowed;
   text-decoration: line-through;
+}
+
+.gusto-card.is-disabled {
+  pointer-events: none;
+  opacity: 0.5;
+  text-decoration: line-through;
+
 }
