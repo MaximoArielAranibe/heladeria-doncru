@@ -33,7 +33,9 @@ const GustosSection = ({ category = "todos", title }) => {
 
   const [activeCategory, setActiveCategory] = useState(category);
 
-  // FLOW CLIENTE
+  /* =====================
+     FLOW CLIENTE
+  ===================== */
   const [sizeModalOpen, setSizeModalOpen] = useState(false);
   const [selectedGusto, setSelectedGusto] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -51,7 +53,9 @@ const GustosSection = ({ category = "todos", title }) => {
     setGustosModalOpen(true);
   };
 
-  // ADMIN EDIT
+  /* =====================
+     ADMIN EDIT
+  ===================== */
   const [editingId, setEditingId] = useState(null);
   const [editData, setEditData] = useState({
     name: "",
@@ -59,6 +63,19 @@ const GustosSection = ({ category = "todos", title }) => {
     newCategory: "",
   });
 
+  /* =====================
+     ADMIN CREATE
+  ===================== */
+  const [creating, setCreating] = useState(false);
+  const [newGusto, setNewGusto] = useState({
+    name: "",
+    weight: "",
+    category: "",
+  });
+
+  /* =====================
+     CATEGORÍAS
+  ===================== */
   const categories = useMemo(() => {
     const unique = new Set(
       safeGustos.map((g) => g.category).filter(Boolean)
@@ -78,6 +95,9 @@ const GustosSection = ({ category = "todos", title }) => {
         );
   }, [safeGustos, activeCategory]);
 
+  /* =====================
+     EDIT
+  ===================== */
   const startEdit = (gusto) => {
     setEditingId(gusto.id);
     setEditData({
@@ -106,11 +126,62 @@ const GustosSection = ({ category = "todos", title }) => {
 
       toast.success("Gusto actualizado 🍦");
       setEditingId(null);
-    } catch (error) {
-      toast.error("Error al actualizar gusto", error);
+    } catch {
+      toast.error("Error al actualizar gusto");
     }
   };
 
+  /* =====================
+     CREATE
+  ===================== */
+  const handleCreate = async () => {
+    if (!newGusto.name.trim()) {
+      toast.error("El nombre no puede estar vacío");
+      return;
+    }
+
+    if (!newGusto.weight || Number(newGusto.weight) <= 0) {
+      toast.error("El stock inicial debe ser mayor a 0");
+      return;
+    }
+
+    const finalCategory =
+      newGusto.category === "__new__"
+        ? slugify(newGusto.newCategory)
+        : newGusto.category;
+
+    if (!finalCategory) {
+      toast.error("Completá la categoría");
+      return;
+    }
+
+    try {
+      await createGusto({
+        name: newGusto.name.trim(),
+        category: finalCategory,
+        weight: Number(newGusto.weight),
+        active: true,
+        createdAt: new Date(),
+      });
+
+      toast.success("Gusto creado 🍨");
+
+      setNewGusto({
+        name: "",
+        weight: "",
+        category: "",
+        newCategory: "",
+      });
+
+      setCreating(false);
+    } catch {
+      toast.error("Error al crear gusto");
+    }
+  };
+
+  /* =====================
+     DELETE
+  ===================== */
   const handleDelete = async (id, name) => {
     if (!window.confirm(`¿Eliminar "${name}"?`)) return;
 
@@ -126,9 +197,80 @@ const GustosSection = ({ category = "todos", title }) => {
 
   return (
     <section className="products">
+      {/* CREATE ADMIN */}
       {isAdmin && (
-        <button onClick={() => createGusto()}>Crear gusto</button>
+        <div className="admin-create-gusto">
+          {!creating ? (
+            <button
+              className="create-gusto-btn"
+              onClick={() => setCreating(true)}
+            >
+              ➕ Agregar gusto
+            </button>
+          ) : (
+            <div className="gusto-edit">
+              <input
+                placeholder="Nombre del gusto"
+                value={newGusto.name}
+                onChange={(e) =>
+                  setNewGusto({
+                    ...newGusto,
+                    name: e.target.value,
+                  })
+                }
+              />
+
+              <input
+                type="number"
+                placeholder="Stock inicial (gramos)"
+                value={newGusto.weight}
+                onChange={(e) =>
+                  setNewGusto({
+                    ...newGusto,
+                    weight: e.target.value,
+                  })
+                }
+              />
+
+              <select
+                value={newGusto.category}
+                onChange={(e) =>
+                  setNewGusto({
+                    ...newGusto,
+                    category: e.target.value,
+                  })
+                }
+              >
+                <option value="">Seleccionar categoría</option>
+                {selectableCategories.map((c) => (
+                  <option key={c} value={c}>
+                    {formatCategory(c)}
+                  </option>
+                ))}
+              </select>
+
+              <button className="save" onClick={handleCreate}>
+                ✔ Crear
+              </button>
+
+              <button
+                className="cancel"
+                onClick={() => {
+                  setCreating(false);
+                  setNewGusto({
+                    name: "",
+                    weight: "",
+                    category: "",
+                  });
+                }}
+              >
+                ✕
+              </button>
+            </div>
+          )}
+        </div>
       )}
+
       <header className="products__header">
         <h2 className="products__title">{title}</h2>
         <p className="products__subtitle">
@@ -136,6 +278,7 @@ const GustosSection = ({ category = "todos", title }) => {
         </p>
       </header>
 
+      {/* FILTROS */}
       <div className="products__filters">
         {categories.map((cat) => (
           <button
@@ -150,13 +293,13 @@ const GustosSection = ({ category = "todos", title }) => {
         ))}
       </div>
 
+      {/* LISTA */}
       <div className="products__list">
         {filteredGustos.map((gusto) => {
           const isInactive =
             gusto.active === false || gusto.weight <= 0;
           const isClickable = !isAdmin && !isInactive;
 
-          // INLINE EDIT
           if (isAdmin && editingId === gusto.id) {
             return (
               <div key={gusto.id} className="gusto-card">
@@ -207,17 +350,13 @@ const GustosSection = ({ category = "todos", title }) => {
                   <div className="gusto-actions">
                     <button
                       className="save"
-                      onClick={() =>
-                        saveEdit(gusto.id)
-                      }
+                      onClick={() => saveEdit(gusto.id)}
                     >
                       Guardar
                     </button>
                     <button
                       className="cancel"
-                      onClick={() =>
-                        setEditingId(null)
-                      }
+                      onClick={() => setEditingId(null)}
                     >
                       Cancelar
                     </button>
@@ -233,25 +372,36 @@ const GustosSection = ({ category = "todos", title }) => {
               className={`gusto-card ${
                 isClickable ? "is-clickable" : ""
               } ${isInactive ? "is-disabled" : ""}`}
-              onClick={(e) => {
+              onClick={() => {
                 if (!isClickable) return;
                 openSizeSelector(gusto);
               }}
-
             >
               <div className="gusto-info">
                 <span className="gusto-name">
                   {gusto.name}
                 </span>
+
+                {isAdmin && (
+                  <span
+                    className={`gusto-stock ${
+                      gusto.weight < 1000
+                        ? "danger"
+                        : gusto.weight < 3000
+                        ? "warning"
+                        : ""
+                    }`}
+                  >
+                    {(gusto.weight / 1000).toFixed(2)} kg
+                  </span>
+                )}
               </div>
 
               {isAdmin && (
                 <div className="gusto-actions">
                   <button
                     className="gusto-edit-btn"
-                    onClick={() =>
-                      startEdit(gusto)
-                    }
+                    onClick={() => startEdit(gusto)}
                   >
                     ✏️
                   </button>
@@ -286,9 +436,7 @@ const GustosSection = ({ category = "todos", title }) => {
               <button
                 key={p.id}
                 className="gusto-option"
-                onClick={() =>
-                  handleSizeSelect(p)
-                }
+                onClick={() => handleSizeSelect(p)}
               >
                 {p.title}
               </button>
